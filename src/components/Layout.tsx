@@ -37,7 +37,14 @@ export function Layout() {
                 >
                   <Icon className="h-4 w-4" />
                   <span className="hidden sm:inline">{label}</span>
-                  {"count" in (nav.find((n) => n.to === to) ?? {}) && count ? (
+                  {count ? (
+                    <span className={`rounded-full px-1.5 text-xs ${active ? "bg-background/20" : "bg-primary/20 text-primary"}`}>
+                      {count}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
                     <span className={`rounded-full px-1.5 text-xs ${active ? "bg-background/20" : "bg-primary/20 text-primary"}`}>
                       {count}
                     </span>
