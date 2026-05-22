@@ -6,12 +6,16 @@ import { addToList, isInList, removeFromList, useWatchlist } from "@/lib/watchli
 import { ArrowLeft, BookmarkCheck, Plus, Star } from "lucide-react";
 
 export const Route = createFileRoute("/anime/$id")({
-  component: () => (
+  component: AnimeRoute,
+});
+
+function AnimeRoute() {
+  return (
     <Layout>
       <AnimeDetail />
     </Layout>
-  ),
-});
+  );
+}
 
 function AnimeDetail() {
   const { id } = Route.useParams();

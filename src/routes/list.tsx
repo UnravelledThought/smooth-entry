@@ -4,12 +4,16 @@ import { useWatchlist, updateEntry, removeFromList, type Status } from "@/lib/wa
 import { Bookmark, Minus, Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/list")({
-  component: () => (
+  component: ListRoute,
+});
+
+function ListRoute() {
+  return (
     <Layout>
       <ListPage />
     </Layout>
-  ),
-});
+  );
+}
 
 const STATUSES: { key: Status; label: string }[] = [
   { key: "watching", label: "Watching" },

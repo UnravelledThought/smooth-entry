@@ -7,12 +7,16 @@ import { ArrowRight, Flame, TrendingUp } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  component: () => (
+  component: Home,
+});
+
+function Home() {
+  return (
     <Layout>
       <Index />
     </Layout>
-  ),
-});
+  );
+}
 
 function Index() {
   const top = useQuery({ queryKey: ["top"], queryFn: getTopAnime });
