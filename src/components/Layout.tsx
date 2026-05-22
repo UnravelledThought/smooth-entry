@@ -48,7 +48,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       </header>
-      <Outlet />
+      {children}
       <footer className="border-t border-border/60 py-8 text-center text-xs text-muted-foreground">
         Powered by Jikan / MyAnimeList · Local watchlist stored on your device
       </footer>
