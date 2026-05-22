@@ -6,11 +6,11 @@ export function Layout() {
   const list = useWatchlist();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
-  const nav = [
+  const nav: { to: "/" | "/search" | "/list"; label: string; icon: typeof Compass; count?: number }[] = [
     { to: "/", label: "Discover", icon: Compass },
     { to: "/search", label: "Search", icon: Search },
     { to: "/list", label: "My List", icon: Bookmark, count: list.length },
-  ] as const;
+  ];
 
   return (
     <div className="min-h-screen bg-background">
