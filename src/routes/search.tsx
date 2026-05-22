@@ -7,14 +7,18 @@ import { searchAnime } from "@/lib/anime-api";
 import { Search as SearchIcon } from "lucide-react";
 
 export const Route = createFileRoute("/search")({
-  component: () => (
-    <Layout>
-      <SearchPage />
-    </Layout>
-  ),
+  component: SearchPage,
 });
 
 function SearchPage() {
+  return (
+    <Layout>
+      <SearchInner />
+    </Layout>
+  );
+}
+
+function SearchInner() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
 
