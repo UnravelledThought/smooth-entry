@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
 import { searchAnime } from "@/lib/anime-api";
@@ -18,17 +18,11 @@ function SearchPage() {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
 
-  // simple debounce
-  useState(() => {
+  useEffect(() => {
     const t = setTimeout(() => setDebounced(q), 350);
     return () => clearTimeout(t);
-  });
+  }, [q]);
 
-  // re-debounce when q changes
-  if (typeof window !== "undefined") {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useDebouncedEffect(() => setDebounced(q), [q], 350);
-  }
 
   const { data, isFetching } = useQuery({
     queryKey: ["search", debounced],
