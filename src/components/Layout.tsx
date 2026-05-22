@@ -1,8 +1,8 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { Bookmark, Compass, Search, Sparkles } from "lucide-react";
 import { useWatchlist } from "@/lib/watchlist";
 
-export function Layout() {
+export function Layout({ children }: { children: React.ReactNode }) {
   const list = useWatchlist();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
