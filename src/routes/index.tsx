@@ -1,143 +1,147 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Layout } from "@/components/Layout";
+import { AnimeCard } from "@/components/AnimeCard";
+import { getTopAnime, getSeasonNow } from "@/lib/anime-api";
+import { ArrowRight, Flame, TrendingUp } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  component: Login,
+  component: () => (
+    <Layout>
+      <Index />
+    </Layout>
+  ),
 });
 
-function Login() {
-  const [show, setShow] = useState(false);
+function Index() {
+  const top = useQuery({ queryKey: ["top"], queryFn: getTopAnime });
+  const season = useQuery({ queryKey: ["season"], queryFn: getSeasonNow });
+  const hero = top.data?.[0];
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      {/* Animated mesh blobs */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10"
-        style={{ backgroundImage: "var(--gradient-mesh)" }}
-      />
-      <div
-        aria-hidden
-        className="absolute -top-32 -left-32 -z-10 h-[28rem] w-[28rem] rounded-full opacity-60 blur-3xl animate-[float_14s_ease-in-out_infinite]"
-        style={{ background: "oklch(0.85 0.18 75 / 0.6)" }}
-      />
-      <div
-        aria-hidden
-        className="absolute -bottom-40 -right-24 -z-10 h-[32rem] w-[32rem] rounded-full opacity-50 blur-3xl animate-[float_18s_ease-in-out_infinite_reverse]"
-        style={{ background: "oklch(0.8 0.15 320 / 0.55)" }}
-      />
-
-      <style>{`
-        @keyframes float {
-          0%,100% { transform: translate(0,0) scale(1); }
-          50% { transform: translate(40px,-30px) scale(1.08); }
-        }
-      `}</style>
-
-      <div className="flex min-h-screen items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
-          {/* Brand */}
-          <div className="mb-8 flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-foreground text-background">
-              <Sparkles className="h-4 w-4" />
+    <>
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          style={{ background: "var(--gradient-hero)" }}
+        />
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-20">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.2fr_1fr]">
+            <div>
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs backdrop-blur">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                Tracking <span className="text-primary font-semibold">2.4M+</span> anime fans this season
+              </div>
+              <h1 className="font-display text-5xl font-bold leading-[0.95] tracking-tight md:text-7xl">
+                Every series.<br />
+                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                  Every episode.
+                </span><br />
+                One list.
+              </h1>
+              <p className="mt-6 max-w-md text-lg text-muted-foreground">
+                Build a watchlist, track progress per episode, and discover what's airing this season — no account required.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  to="/search"
+                  className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:gap-3"
+                  style={{ boxShadow: "var(--shadow-glow)" }}
+                >
+                  Start tracking
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  to="/list"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-6 py-3 text-sm font-semibold backdrop-blur transition-all hover:bg-card"
+                >
+                  My list
+                </Link>
+              </div>
             </div>
-            <span className="text-sm font-medium tracking-tight">north—</span>
-          </div>
 
-          {/* Card */}
-          <div
-            className="rounded-3xl border border-border/60 bg-card/70 p-8 backdrop-blur-xl"
-            style={{ boxShadow: "var(--shadow-soft)" }}
-          >
-            <h1 className="text-3xl font-semibold tracking-tight">
-              Welcome back<span className="text-accent">.</span>
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Sign in to pick up where you left off.
-            </p>
-
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="mt-8 space-y-4"
-            >
-              <div className="group">
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="you@studio.com"
-                  className="w-full rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none transition-all placeholder:text-muted-foreground/60 focus:border-foreground/30 focus:bg-background focus:ring-4 focus:ring-accent/30"
+            {hero && (
+              <Link
+                to="/anime/$id"
+                params={{ id: String(hero.mal_id) }}
+                className="group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-border/60"
+                style={{ boxShadow: "var(--shadow-glow)" }}
+              >
+                <img
+                  src={hero.images.jpg.large_image_url}
+                  alt={hero.title}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted-foreground">
-                  <span>Password</span>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Forgot?
-                  </a>
-                </label>
-                <div className="relative">
-                  <input
-                    type={show ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="w-full rounded-2xl border border-border bg-background/60 px-4 py-3 pr-11 text-sm outline-none transition-all placeholder:text-muted-foreground/60 focus:border-foreground/30 focus:bg-background focus:ring-4 focus:ring-accent/30"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShow((s) => !s)}
-                    className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label={show ? "Hide password" : "Show password"}
-                  >
-                    {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6">
+                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
+                    <Flame className="h-3 w-3" /> #1 All-time
+                  </div>
+                  <h3 className="font-display text-2xl font-bold leading-tight">
+                    {hero.title_english ?? hero.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    ★ {hero.score?.toFixed(2)} · {hero.episodes ?? "?"} eps · {hero.year ?? hero.status}
+                  </p>
                 </div>
-              </div>
-
-              <button
-                type="submit"
-                className="group mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-4 py-3.5 text-sm font-medium text-background transition-all hover:gap-3 hover:bg-foreground/90 active:scale-[0.98]"
-              >
-                Sign in
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </button>
-
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-card px-3 text-xs uppercase tracking-widest text-muted-foreground">
-                    or
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm font-medium transition-all hover:bg-background hover:shadow-sm"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.07H2.18a11 11 0 0 0 0 9.87l3.66-2.84z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/>
-                </svg>
-                Continue with Google
-              </button>
-            </form>
+              </Link>
+            )}
           </div>
-
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            New here?{" "}
-            <a href="#" className="font-medium text-foreground underline-offset-4 hover:underline">
-              Create an account
-            </a>
-          </p>
         </div>
+      </section>
+
+      {/* This season */}
+      <Section
+        title="Airing this season"
+        icon={<TrendingUp className="h-5 w-5" />}
+        loading={season.isLoading}
+        items={season.data?.slice(0, 12)}
+      />
+
+      {/* Top */}
+      <Section
+        title="All-time top rated"
+        icon={<Flame className="h-5 w-5" />}
+        loading={top.isLoading}
+        items={top.data?.slice(1, 13)}
+      />
+    </>
+  );
+}
+
+function Section({
+  title,
+  icon,
+  loading,
+  items,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  loading: boolean;
+  items: Awaited<ReturnType<typeof getTopAnime>> | undefined;
+}) {
+  return (
+    <section className="mx-auto max-w-7xl px-5 py-12">
+      <div className="mb-6 flex items-center gap-3">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary">
+          {icon}
+        </span>
+        <h2 className="font-display text-2xl font-bold">{title}</h2>
       </div>
-    </main>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="aspect-[2/3] animate-pulse rounded-2xl bg-card" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {items?.map((a) => <AnimeCard key={a.mal_id} anime={a} />)}
+        </div>
+      )}
+    </section>
   );
 }
