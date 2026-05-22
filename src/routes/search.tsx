@@ -63,12 +63,3 @@ function SearchPage() {
     </div>
   );
 }
-
-import { useEffect } from "react";
-function useDebouncedEffect(fn: () => void, deps: React.DependencyList, ms: number) {
-  useEffect(() => {
-    const t = setTimeout(fn, ms);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-}
