@@ -79,37 +79,79 @@ function ListPage() {
                   No anime in {label.toLowerCase()}.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {items.map((entry) => {
                     const pct = entry.episodes ? Math.min(100, (entry.progress / entry.episodes) * 100) : 0;
                     return (
                       <div
                         key={entry.id}
-                        className="group flex items-center gap-4 rounded-2xl border border-border/60 bg-card p-3 transition-all hover:border-primary/40"
+                        className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
                       >
-                        <Link to="/anime/$id" params={{ id: String(entry.id) }} className="shrink-0">
-                          <img src={entry.image} alt={entry.title} className="h-20 w-14 rounded-lg object-cover" />
-                        </Link>
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            to="/anime/$id"
-                            params={{ id: String(entry.id) }}
-                            className="block truncate font-semibold hover:text-primary"
-                          >
-                            {entry.title}
+                        <button
+                          onClick={() => removeFromList(entry.id)}
+                          className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur transition-all hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
+                          aria-label="Remove"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+
+                        <div className="flex gap-4 p-4">
+                          <Link to="/anime/$id" params={{ id: String(entry.id) }} className="shrink-0">
+                            <img src={entry.image} alt={entry.title} className="h-28 w-20 rounded-xl object-cover" />
                           </Link>
-                          <div className="mt-2 flex items-center gap-3">
-                            <div className="flex items-center gap-1 rounded-full border border-border bg-background">
-                              <button
-                                onClick={() => updateEntry(entry.id, { progress: Math.max(0, entry.progress - 1) })}
-                                className="grid h-8 w-8 place-items-center rounded-l-full hover:bg-muted"
-                                aria-label="Decrease"
-                              >
-                                <Minus className="h-3.5 w-3.5" />
-                              </button>
-                              <span className="min-w-[3.5rem] text-center text-sm font-mono">
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              to="/anime/$id"
+                              params={{ id: String(entry.id) }}
+                              className="line-clamp-2 font-display text-base font-semibold leading-tight hover:text-primary"
+                            >
+                              {entry.title}
+                            </Link>
+
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500">
+                                <Star className="h-3 w-3 fill-current" />
+                                {entry.malScore?.toFixed(2) ?? "—"}
+                                <span className="text-[10px] font-normal text-amber-500/70">MAL</span>
+                              </span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                <Star className="h-3 w-3 fill-current" />
+                                {entry.score?.toFixed(1) ?? "—"}
+                                <span className="text-[10px] font-normal text-primary/70">you</span>
+                              </span>
+                            </div>
+
+                            <select
+                              value={entry.status}
+                              onChange={(e) => updateEntry(entry.id, { status: e.target.value as Status })}
+                              className="mt-2 rounded-full border border-border bg-background px-3 py-1 text-xs outline-none"
+                            >
+                              {STATUSES.map((s) => (
+                                <option key={s.key} value={s.key}>{s.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 border-t border-border/60 bg-muted/20 p-4">
+                          <div>
+                            <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
+                              <span>Episodes</span>
+                              <span className="font-mono text-foreground">
                                 {entry.progress}<span className="text-muted-foreground">/{entry.episodes ?? "?"}</span>
                               </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => updateEntry(entry.id, { progress: Math.max(0, entry.progress - 1) })}
+                                className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-border bg-background hover:bg-muted"
+                                aria-label="Decrease"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                                <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${pct}%` }} />
+                              </div>
                               <button
                                 onClick={() => {
                                   const next = entry.progress + 1;
@@ -119,35 +161,33 @@ function ListPage() {
                                     status: completed ? "completed" : entry.status,
                                   });
                                 }}
-                                className="grid h-8 w-8 place-items-center rounded-r-full hover:bg-muted"
+                                className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-border bg-background hover:bg-muted"
                                 aria-label="Increase"
                               >
-                                <Plus className="h-3.5 w-3.5" />
+                                <Plus className="h-3 w-3" />
                               </button>
                             </div>
-                            <select
-                              value={entry.status}
-                              onChange={(e) => updateEntry(entry.id, { status: e.target.value as Status })}
-                              className="rounded-full border border-border bg-background px-3 py-1.5 text-xs outline-none"
-                            >
-                              {STATUSES.map((s) => (
-                                <option key={s.key} value={s.key}>{s.label}</option>
-                              ))}
-                            </select>
                           </div>
-                          {entry.episodes && (
-                            <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
-                              <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${pct}%` }} />
+
+                          <div>
+                            <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
+                              <span>Your rating</span>
+                              <span className="font-mono text-foreground">
+                                {entry.score?.toFixed(1) ?? "—"}<span className="text-muted-foreground">/10.0</span>
+                              </span>
                             </div>
-                          )}
+                            <input
+                              type="range"
+                              min={0}
+                              max={10}
+                              step={0.1}
+                              value={entry.score ?? 0}
+                              onChange={(e) => updateEntry(entry.id, { score: parseFloat(e.target.value) })}
+                              className="w-full accent-primary"
+                              aria-label="Personal rating"
+                            />
+                          </div>
                         </div>
-                        <button
-                          onClick={() => removeFromList(entry.id)}
-                          className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground opacity-0 transition-all hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
-                          aria-label="Remove"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </div>
                     );
                   })}
