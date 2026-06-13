@@ -11,6 +11,7 @@ export interface WatchlistEntry {
   progress: number;
   status: Status;
   score: number | null;
+  malScore: number | null;
   added: number;
 }
 
