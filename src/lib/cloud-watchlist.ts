@@ -56,18 +56,30 @@ export function useMyEntryFor(malId: number) {
   });
 }
 
+export type SharedEntry = CloudEntry & { profile: { username: string; accent_color: string } | null };
+
 export function useSharedFeed(limit = 12) {
   return useQuery({
     queryKey: ["shared-feed", limit],
-    queryFn: async () => {
+    queryFn: async (): Promise<SharedEntry[]> => {
       const { data, error } = await supabase
         .from("watchlist_entries")
-        .select("id, mal_id, title, image_url, status, progress, personal_score, mal_score, shared_at, user_id, profiles:user_id(username, accent_color)")
+        .select("*")
         .eq("is_shared", true)
         .order("shared_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return data as Array<CloudEntry & { profiles: { username: string; accent_color: string } | null }>;
+      const rows = (data ?? []) as CloudEntry[];
+      const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+      let profileMap = new Map<string, { username: string; accent_color: string }>();
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, username, accent_color")
+          .in("id", userIds);
+        for (const p of profs ?? []) profileMap.set(p.id, { username: p.username, accent_color: p.accent_color });
+      }
+      return rows.map((r) => ({ ...r, profile: profileMap.get(r.user_id) ?? null }));
     },
     refetchInterval: 30_000,
   });
