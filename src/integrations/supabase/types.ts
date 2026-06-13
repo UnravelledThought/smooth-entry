@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          accent_color: string
+          bio: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          accent_color?: string
+          bio?: string | null
+          created_at?: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          accent_color?: string
+          bio?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      watchlist_entries: {
+        Row: {
+          created_at: string
+          episodes: number | null
+          id: string
+          image_url: string
+          is_pinned: boolean
+          is_shared: boolean
+          mal_id: number
+          mal_score: number | null
+          personal_score: number | null
+          progress: number
+          shared_at: string | null
+          status: Database["public"]["Enums"]["watch_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          episodes?: number | null
+          id?: string
+          image_url: string
+          is_pinned?: boolean
+          is_shared?: boolean
+          mal_id: number
+          mal_score?: number | null
+          personal_score?: number | null
+          progress?: number
+          shared_at?: string | null
+          status?: Database["public"]["Enums"]["watch_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          episodes?: number | null
+          id?: string
+          image_url?: string
+          is_pinned?: boolean
+          is_shared?: boolean
+          mal_id?: number
+          mal_score?: number | null
+          personal_score?: number | null
+          progress?: number
+          shared_at?: string | null
+          status?: Database["public"]["Enums"]["watch_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +103,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      watch_status: "watching" | "completed" | "plan" | "dropped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +230,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      watch_status: ["watching", "completed", "plan", "dropped"],
+    },
   },
 } as const
