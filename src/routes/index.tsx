@@ -1,148 +1,111 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
 import { getTopAnime, getSeasonNow } from "@/lib/anime-api";
-import { ArrowRight, Flame, TrendingUp } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useSharedFeed } from "@/lib/cloud-watchlist";
+import { ArrowRight, Share2 } from "lucide-react";
 
-export const Route = createFileRoute("/")({
-  component: Home,
-});
+export const Route = createFileRoute("/")({ component: Home });
 
-function Home() {
-  return (
-    <Layout>
-      <Index />
-    </Layout>
-  );
-}
+function Home() { return <Layout><Index /></Layout>; }
 
 function Index() {
   const top = useQuery({ queryKey: ["top"], queryFn: getTopAnime });
   const season = useQuery({ queryKey: ["season"], queryFn: getSeasonNow });
-  const hero = top.data?.[0];
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{ background: "var(--gradient-hero)" }}
-        />
-        <div className="mx-auto max-w-7xl px-5 pb-16 pt-20">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.2fr_1fr]">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs backdrop-blur">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-                Tracking <span className="text-primary font-semibold">2.4M+</span> anime fans this season
-              </div>
-              <h1 className="font-display text-5xl font-bold leading-[0.95] tracking-tight md:text-7xl">
-                Every series.<br />
-                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                  Every episode.
-                </span><br />
-                One list.
-              </h1>
-              <p className="mt-6 max-w-md text-lg text-muted-foreground">
-                Build a watchlist, track progress per episode, and discover what's airing this season — no account required.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  to="/search"
-                  className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:gap-3"
-                  style={{ boxShadow: "var(--shadow-glow)" }}
-                >
-                  Start tracking
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-                <Link
-                  to="/list"
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-6 py-3 text-sm font-semibold backdrop-blur transition-all hover:bg-card"
-                >
-                  My list
-                </Link>
-              </div>
-            </div>
-
-            {hero && (
-              <Link
-                to="/anime/$id"
-                params={{ id: String(hero.mal_id) }}
-                className="group relative block aspect-[3/4] overflow-hidden rounded-3xl border border-border/60"
-                style={{ boxShadow: "var(--shadow-glow)" }}
-              >
-                <img
-                  src={hero.images.jpg.large_image_url}
-                  alt={hero.title}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-6">
-                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
-                    <Flame className="h-3 w-3" /> #1 All-time
-                  </div>
-                  <h3 className="font-display text-2xl font-bold leading-tight">
-                    {hero.title_english ?? hero.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    ★ {hero.score?.toFixed(2)} · {hero.episodes ?? "?"} eps · {hero.year ?? hero.status}
-                  </p>
-                </div>
-              </Link>
-            )}
-          </div>
+      <section className="mx-auto max-w-6xl px-5 pb-12 pt-20">
+        <h1 className="font-display text-6xl font-bold leading-[0.95] tracking-tight md:text-8xl">
+          Every series.<br />
+          Every episode.<br />
+          <span className="accent-text">One list.</span>
+        </h1>
+        <p className="mt-6 max-w-md text-base text-muted-foreground">
+          Build a watchlist, share what you're watching, pin your favorites to your profile.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-2">
+          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2.5 text-sm font-medium hover:gap-3 transition-all">
+            Start tracking <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm">
+            My list
+          </Link>
         </div>
       </section>
 
-      {/* This season */}
-      <Section
-        title="Airing this season"
-        icon={<TrendingUp className="h-5 w-5" />}
-        loading={season.isLoading}
-        items={season.data?.slice(0, 12)}
-      />
+      <SharedFeed />
 
-      {/* Top */}
-      <Section
-        title="All-time top rated"
-        icon={<Flame className="h-5 w-5" />}
-        loading={top.isLoading}
-        items={top.data?.slice(1, 13)}
-      />
+      <Row title="Airing this season" loading={season.isLoading} items={season.data?.slice(0, 12)} />
+      <Row title="All-time top" loading={top.isLoading} items={top.data?.slice(0, 12)} />
     </>
   );
 }
 
-function Section({
-  title,
-  icon,
-  loading,
-  items,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  loading: boolean;
-  items: Awaited<ReturnType<typeof getTopAnime>> | undefined;
-}) {
+function SharedFeed() {
+  const feed = useSharedFeed(12);
   return (
-    <section className="mx-auto max-w-7xl px-5 py-12">
-      <div className="mb-6 flex items-center gap-3">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary">
-          {icon}
-        </span>
-        <h2 className="font-display text-2xl font-bold">{title}</h2>
+    <section className="mx-auto max-w-6xl px-5 py-10">
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+            <Share2 className="h-3 w-3" /> Community shares
+          </div>
+          <h2 className="mt-1 font-display text-2xl font-bold">What otakus are watching</h2>
+        </div>
       </div>
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      {feed.isLoading ? (
+        <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="aspect-[2/3] animate-pulse rounded-2xl bg-card" />
+            <div key={i} className="h-32 w-56 shrink-0 animate-pulse rounded-xl border border-border bg-surface" />
+          ))}
+        </div>
+      ) : feed.data && feed.data.length > 0 ? (
+        <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+          {feed.data.map((e) => (
+            <div key={e.id} className="flex w-64 shrink-0 gap-3 rounded-xl border border-border bg-surface p-3">
+              <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="shrink-0">
+                <img src={e.image_url} alt="" className="h-24 w-16 rounded object-cover" />
+              </Link>
+              <div className="min-w-0 flex-1">
+                <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="line-clamp-2 text-sm font-semibold leading-tight hover:accent-text">
+                  {e.title}
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  shared by{" "}
+                  {e.profile?.username ? (
+                    <Link to="/u/$username" params={{ username: e.profile.username }} className="hover:accent-text">
+                      @{e.profile.username}
+                    </Link>
+                  ) : "someone"}
+                </p>
+                <p className="mt-1 text-xs"><span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">{e.status}</span></p>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          No shares yet — be the first to share something from your list.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Row({ title, loading, items }: { title: string; loading: boolean; items: Awaited<ReturnType<typeof getTopAnime>> | undefined }) {
+  return (
+    <section className="mx-auto max-w-6xl px-5 py-10">
+      <h2 className="mb-5 font-display text-2xl font-bold">{title}</h2>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="aspect-[2/3] animate-pulse rounded-xl border border-border bg-surface" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {items?.map((a) => <AnimeCard key={a.mal_id} anime={a} />)}
         </div>
       )}

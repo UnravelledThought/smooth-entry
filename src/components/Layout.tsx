@@ -1,56 +1,73 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bookmark, Compass, Search, Sparkles } from "lucide-react";
-import { useWatchlist } from "@/lib/watchlist";
+import { Bookmark, Compass, Search, User as UserIcon, LogIn } from "lucide-react";
+import { useAuth, signOut } from "@/lib/auth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const list = useWatchlist();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { user, profile } = useAuth();
 
-  const nav: { to: "/" | "/search" | "/list"; label: string; icon: typeof Compass; count?: number }[] = [
-    { to: "/", label: "Discover", icon: Compass },
-    { to: "/search", label: "Search", icon: Search },
-    { to: "/list", label: "My List", icon: Bookmark, count: list.length },
+  const nav = [
+    { to: "/" as const, label: "Discover", icon: Compass },
+    { to: "/search" as const, label: "Search", icon: Search },
+    { to: "/list" as const, label: "List", icon: Bookmark },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent">
-              <Sparkles className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-display text-xl font-bold">otaku<span className="text-primary">.</span></span>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
+          <Link to="/" className="font-display text-xl font-bold tracking-tight">
+            otaku<span className="accent-text">.</span>
           </Link>
-          <nav className="flex items-center gap-1 rounded-full border border-border bg-card/60 p-1">
-            {nav.map(({ to, label, icon: Icon, count }) => {
+          <nav className="flex items-center gap-1">
+            {nav.map(({ to, label, icon: Icon }) => {
               const active = path === to;
               return (
                 <Link
                   key={to}
                   to={to}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground"
+                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
+                    active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{label}</span>
-                  {count ? (
-                    <span className={`rounded-full px-1.5 text-xs ${active ? "bg-background/20" : "bg-primary/20 text-primary"}`}>
-                      {count}
-                    </span>
-                  ) : null}
                 </Link>
               );
             })}
           </nav>
+          <div className="flex items-center gap-2">
+            {user && profile ? (
+              <>
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm hover:bg-foreground hover:text-background"
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ background: "var(--accent-color)" }} />
+                  <span className="hidden sm:inline">{profile.username}</span>
+                  <UserIcon className="h-3.5 w-3.5 sm:hidden" />
+                </Link>
+                <button
+                  onClick={() => signOut()}
+                  className="rounded-full px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex items-center gap-2 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background hover:opacity-90"
+              >
+                <LogIn className="h-3.5 w-3.5" /> Sign in
+              </Link>
+            )}
+          </div>
         </div>
       </header>
       {children}
-      <footer className="border-t border-border/60 py-8 text-center text-xs text-muted-foreground">
-        Powered by Jikan / MyAnimeList · Local watchlist stored on your device
+      <footer className="mt-20 border-t border-border py-8 text-center text-xs text-muted-foreground">
+        Powered by Jikan / MyAnimeList
       </footer>
     </div>
   );
