@@ -11,6 +11,7 @@ export interface WatchlistEntry {
   progress: number;
   status: Status;
   score: number | null;
+  malScore: number | null;
   added: number;
 }
 
@@ -62,6 +63,7 @@ export function addToList(anime: Anime, status: Status = "plan") {
     progress: 0,
     status,
     score: null,
+    malScore: anime.score ?? null,
     added: Date.now(),
   });
   write(list);
