@@ -7,6 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { AuthProvider } from "@/lib/auth";
+import { AccentApplier } from "@/components/AccentApplier";
 
 import appCss from "../styles.css?url";
 
@@ -111,7 +113,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <AccentApplier />
+        <Outlet />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
