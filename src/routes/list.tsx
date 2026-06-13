@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/Layout";
 import { useWatchlist, updateEntry, removeFromList, type Status } from "@/lib/watchlist";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Bookmark, Minus, Plus, Trash2 } from "lucide-react";
+import { Bookmark, Minus, Plus, Trash2, Star } from "lucide-react";
 
 export const Route = createFileRoute("/list")({
   component: ListRoute,
