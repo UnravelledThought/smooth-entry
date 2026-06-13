@@ -29,6 +29,7 @@
   --color-destructive-foreground: var(--background);
   --color-border: var(--border);
   --color-input: var(--border);
+  --color-surface: var(--surface);
   --color-ring: var(--accent-color);
   --font-display: "Syne", ui-sans-serif, system-ui;
   --font-sans: "Inter", ui-sans-serif, system-ui;
