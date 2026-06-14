@@ -45,10 +45,10 @@ function SharedFeed() {
     <section className="mx-auto max-w-6xl px-5 py-10">
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-            <Share2 className="h-3 w-3" /> Community shares
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            <Share2 className="h-3 w-3" /> Shared
           </div>
-          <h2 className="mt-1 font-display text-2xl font-bold">What otakus are watching</h2>
+          <h2 className="mt-1 font-display text-xl font-semibold">Recently shared</h2>
         </div>
       </div>
       {feed.isLoading ? (
