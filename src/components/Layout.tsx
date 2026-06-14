@@ -66,8 +66,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       {children}
-      <footer className="mt-20 border-t border-border py-8 text-center text-xs text-muted-foreground">
-        Powered by Jikan / MyAnimeList
+      <footer className="mt-24 border-t border-border py-6 text-center text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+        AniTrack · Jikan / MAL
       </footer>
     </div>
   );
