@@ -16,20 +16,16 @@ function Index() {
 
   return (
     <>
-      <section className="mx-auto max-w-6xl px-5 pb-12 pt-20">
-        <h1 className="font-display text-6xl font-bold leading-[0.95] tracking-tight md:text-8xl">
-          Every series.<br />
-          Every episode.<br />
-          <span className="accent-text">One list.</span>
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-24">
+        <h1 className="font-display text-5xl font-semibold leading-[1] tracking-tight md:text-7xl">
+          Track every anime.<br />
+          <span className="text-muted-foreground">One quiet list.</span>
         </h1>
-        <p className="mt-6 max-w-md text-base text-muted-foreground">
-          Build a watchlist, share what you're watching, pin your favorites to your profile.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-2">
-          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2.5 text-sm font-medium hover:gap-3 transition-all">
-            Start tracking <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        <div className="mt-10 flex flex-wrap gap-2">
+          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2 text-sm font-medium hover:gap-3 transition-all">
+            Start tracking <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm">
+          <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm text-muted-foreground hover:text-foreground">
             My list
           </Link>
         </div>
