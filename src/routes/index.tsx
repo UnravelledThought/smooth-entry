@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
 import { getTopAnime, getSeasonNow } from "@/lib/anime-api";
 import { useSharedFeed } from "@/lib/cloud-watchlist";
+import { useAuth } from "@/lib/auth";
 import { ArrowRight, Share2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -13,6 +14,7 @@ function Home() { return <Layout><Index /></Layout>; }
 function Index() {
   const top = useQuery({ queryKey: ["top"], queryFn: getTopAnime });
   const season = useQuery({ queryKey: ["season"], queryFn: getSeasonNow });
+  const { user } = useAuth();
 
   return (
     <>
@@ -22,11 +24,11 @@ function Index() {
           <span className="text-muted-foreground">for all anime.</span>
         </h1>
         <div className="mt-10 flex flex-wrap gap-2">
-          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2 text-sm font-medium hover:gap-3 transition-all">
-            Start tracking <ArrowRight className="h-4 w-4" />
+          <Link to={user ? "/search" : "/auth"} className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2 text-sm font-medium hover:gap-3 transition-all">
+            {user ? "Start tracking" : "Sign in to track"} <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm text-muted-foreground hover:text-foreground">
-            My list
+          <Link to={user ? "/list" : "/auth"} className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm text-muted-foreground hover:text-foreground">
+            {user ? "My list" : "Create account"}
           </Link>
         </div>
       </section>
