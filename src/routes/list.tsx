@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Bookmark, Minus, Plus, Trash2, Star, Share2, Pin, PinOff } from "lucide-react";
@@ -22,21 +23,13 @@ const STATUSES: { key: WatchStatus; label: string }[] = [
 function ListPage() {
   const { user, loading } = useAuth();
   const q = useMyEntries();
+  const navigate = useNavigate();
 
-  if (loading) return <div className="px-5 py-12 text-sm text-muted-foreground">Loading…</div>;
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/auth", replace: true });
+  }, [loading, user, navigate]);
 
-  if (!user) {
-    return (
-      <div className="mx-auto max-w-md px-5 py-24 text-center">
-        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-border">
-          <Bookmark className="h-5 w-5" />
-        </div>
-        <h1 className="mt-6 font-display text-3xl font-bold">Sign in to track</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Your list, your ratings, your pinned favorites — all in your account.</p>
-        <Link to="/auth" className="mt-6 inline-block accent-bg rounded-lg px-6 py-2.5 text-sm font-semibold">Sign in / Sign up</Link>
-      </div>
-    );
-  }
+  if (loading || !user) return <div className="px-5 py-12 text-sm text-muted-foreground">Redirecting to sign in…</div>;
 
   const list = q.data ?? [];
 
