@@ -18,8 +18,8 @@ function Index() {
     <>
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-24">
         <h1 className="font-display text-5xl font-semibold leading-[1] tracking-tight md:text-7xl">
-          all animes.<br />
-          <span className="text-muted-foreground">one list.</span>
+          one list<br />
+          <span className="text-muted-foreground">for all anime.</span>
         </h1>
         <div className="mt-10 flex flex-wrap gap-2">
           <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2 text-sm font-medium hover:gap-3 transition-all">
