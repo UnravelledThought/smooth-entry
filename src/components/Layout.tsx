@@ -16,8 +16,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
-          <Link to="/" className="font-display text-xl font-bold tracking-tight">
-            otaku<span className="accent-text">.</span>
+          <Link to="/" className="font-display text-lg font-semibold tracking-tight">
+            ani<span className="accent-text">track</span>
           </Link>
           <nav className="flex items-center gap-1">
             {nav.map(({ to, label, icon: Icon }) => {
@@ -66,8 +66,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       {children}
-      <footer className="mt-20 border-t border-border py-8 text-center text-xs text-muted-foreground">
-        Powered by Jikan / MyAnimeList
+      <footer className="mt-24 border-t border-border py-6 text-center text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+        AniTrack · Jikan / MAL
       </footer>
     </div>
   );

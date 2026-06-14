@@ -16,20 +16,16 @@ function Index() {
 
   return (
     <>
-      <section className="mx-auto max-w-6xl px-5 pb-12 pt-20">
-        <h1 className="font-display text-6xl font-bold leading-[0.95] tracking-tight md:text-8xl">
-          Every series.<br />
-          Every episode.<br />
-          <span className="accent-text">One list.</span>
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-24">
+        <h1 className="font-display text-5xl font-semibold leading-[1] tracking-tight md:text-7xl">
+          Track every anime.<br />
+          <span className="text-muted-foreground">One quiet list.</span>
         </h1>
-        <p className="mt-6 max-w-md text-base text-muted-foreground">
-          Build a watchlist, share what you're watching, pin your favorites to your profile.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-2">
-          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2.5 text-sm font-medium hover:gap-3 transition-all">
-            Start tracking <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        <div className="mt-10 flex flex-wrap gap-2">
+          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2 text-sm font-medium hover:gap-3 transition-all">
+            Start tracking <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm">
+          <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm text-muted-foreground hover:text-foreground">
             My list
           </Link>
         </div>
@@ -49,10 +45,10 @@ function SharedFeed() {
     <section className="mx-auto max-w-6xl px-5 py-10">
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-            <Share2 className="h-3 w-3" /> Community shares
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            <Share2 className="h-3 w-3" /> Shared
           </div>
-          <h2 className="mt-1 font-display text-2xl font-bold">What otakus are watching</h2>
+          <h2 className="mt-1 font-display text-xl font-semibold">Recently shared</h2>
         </div>
       </div>
       {feed.isLoading ? (
@@ -97,7 +93,7 @@ function SharedFeed() {
 function Row({ title, loading, items }: { title: string; loading: boolean; items: Awaited<ReturnType<typeof getTopAnime>> | undefined }) {
   return (
     <section className="mx-auto max-w-6xl px-5 py-10">
-      <h2 className="mb-5 font-display text-2xl font-bold">{title}</h2>
+      <h2 className="mb-5 font-display text-xl font-semibold">{title}</h2>
       {loading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
