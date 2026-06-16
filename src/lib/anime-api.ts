@@ -1,3 +1,5 @@
+import { fetchAnimeCached } from "./anime-cache.functions";
+
 export interface Anime {
   mal_id: number;
   title: string;
@@ -12,85 +14,61 @@ export interface Anime {
   type: string | null;
 }
 
-const BASE = "https://api.jikan.moe/v4";
-
-// 24h cache for anime data — Jikan rate-limits aggressively and anime metadata
-// rarely changes, so persist results to localStorage.
-const TTL_MS = 24 * 60 * 60 * 1000;
+// L1: per-browser localStorage cache (instant, free).
+// L2: shared Supabase `anime_cache` table via server fn (fills once per
+// unique query across all users, then served from DB forever).
 const PREFIX = "anime-cache:";
 
-type CacheShape<T> = { t: number; v: T };
-
-function cacheGet<T>(key: string): T | null {
+function lsGet<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(PREFIX + key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CacheShape<T>;
-    if (Date.now() - parsed.t > TTL_MS) {
-      localStorage.removeItem(PREFIX + key);
-      return null;
-    }
-    return parsed.v;
-  } catch {
-    return null;
-  }
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch { return null; }
 }
-
-function cacheSet<T>(key: string, value: T) {
+function lsSet<T>(key: string, value: T) {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(PREFIX + key, JSON.stringify({ t: Date.now(), v: value }));
-  } catch {
-    // quota — try evicting old entries
+  try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); }
+  catch {
     try {
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
         if (k?.startsWith(PREFIX)) localStorage.removeItem(k);
       }
-      localStorage.setItem(PREFIX + key, JSON.stringify({ t: Date.now(), v: value }));
+      localStorage.setItem(PREFIX + key, JSON.stringify(value));
     } catch { /* ignore */ }
   }
 }
 
-async function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
-  const hit = cacheGet<T>(key);
+async function cached<T>(key: string, path: string): Promise<T> {
+  const hit = lsGet<T>(key);
   if (hit !== null) return hit;
-  const fresh = await fetcher();
-  cacheSet(key, fresh);
+  const fresh = (await fetchAnimeCached({ data: { key, path } })) as T;
+  lsSet(key, fresh);
   return fresh;
 }
 
 export async function getTopAnime(): Promise<Anime[]> {
-  return cached("top", async () => {
-    const res = await fetch(`${BASE}/top/anime?limit=18`);
-    const json = await res.json();
-    return (json.data ?? []) as Anime[];
-  });
+  const v = await cached<Anime[] | null>("top", "top/anime?limit=18");
+  return v ?? [];
 }
 
 export async function getSeasonNow(): Promise<Anime[]> {
-  return cached("season", async () => {
-    const res = await fetch(`${BASE}/seasons/now?limit=12`);
-    const json = await res.json();
-    return (json.data ?? []) as Anime[];
-  });
+  const v = await cached<Anime[] | null>("season", "seasons/now?limit=12");
+  return v ?? [];
 }
 
 export async function searchAnime(q: string): Promise<Anime[]> {
   const query = q.trim();
   if (!query) return [];
-  return cached(`q:${query.toLowerCase()}`, async () => {
-    const res = await fetch(`${BASE}/anime?q=${encodeURIComponent(query)}&limit=20&sfw=true`);
-    const json = await res.json();
-    return (json.data ?? []) as Anime[];
-  });
+  const norm = query.toLowerCase();
+  const v = await cached<Anime[] | null>(
+    `q:${norm}`,
+    `anime?q=${encodeURIComponent(norm)}&limit=20&sfw=true`,
+  );
+  return v ?? [];
 }
 
 export async function getAnime(id: number): Promise<Anime | null> {
-  return cached(`a:${id}`, async () => {
-    const res = await fetch(`${BASE}/anime/${id}`);
-    const json = await res.json();
-    return (json.data ?? null) as Anime | null;
-  });
+  return cached<Anime | null>(`a:${id}`, `anime/${id}`);
 }
