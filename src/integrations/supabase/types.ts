@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      anime_cache: {
+        Row: {
+          cache_key: string
+          cached_at: string
+          data: Json
+        }
+        Insert: {
+          cache_key: string
+          cached_at?: string
+          data: Json
+        }
+        Update: {
+          cache_key?: string
+          cached_at?: string
+          data?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           accent_color: string
