@@ -21,6 +21,7 @@ function Settings() {
   const [color, setColor] = useState("#ff2d6f");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
     if (profile) { setColor(profile.accent_color); setBio(profile.bio ?? ""); }
