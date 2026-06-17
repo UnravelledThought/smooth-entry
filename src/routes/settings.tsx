@@ -3,9 +3,7 @@ import { useEffect, useState } from "react";
 import { HexColorPicker, HexColorInput } from "react-colorful";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/lib/auth";
-import { useMyEntries, useUpdateEntry } from "@/lib/cloud-watchlist";
 import { supabase } from "@/integrations/supabase/client";
-import { Pin, PinOff } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsRoute,
