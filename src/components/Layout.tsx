@@ -47,22 +47,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="flex items-center gap-2">
             {user && profile ? (
-              <>
-                <Link
-                  to="/settings"
-                  className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm hover:bg-foreground hover:text-background"
-                >
-                  <span className="h-2 w-2 rounded-full" style={{ background: "var(--accent-color)" }} />
-                  <span className="hidden sm:inline">{profile.username}</span>
-                  <UserIcon className="h-3.5 w-3.5 sm:hidden" />
-                </Link>
-                <button
-                  onClick={() => signOut()}
-                  className="rounded-full px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Sign out
-                </button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-sm font-semibold uppercase transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background"
+                    style={{ background: profile.accent_color, color: "#000" }}
+                    aria-label="Account menu"
+                  >
+                    {profile.username.slice(0, 2)}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel className="truncate">@{profile.username}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/u/$username" params={{ username: profile.username }} className="cursor-pointer">
+                      <UserIcon className="mr-2 h-4 w-4" /> Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer">
+                      <SettingsIcon className="mr-2 h-4 w-4" /> Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link
                 to="/auth"
@@ -72,6 +85,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             )}
           </div>
+
         </div>
       </header>
       {children}
