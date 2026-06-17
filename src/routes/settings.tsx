@@ -77,25 +77,33 @@ function Settings() {
             />
           ))}
         </div>
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center">
-          <div className="accent-picker">
-            <HexColorPicker color={color} onChange={setColor} />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Hex</span>
-            <div className="flex items-center gap-2">
-              <span className="h-8 w-8 rounded border border-border" style={{ background: color }} />
-              <span className="text-sm text-muted-foreground">#</span>
-              <HexColorInput
-                color={color}
-                onChange={setColor}
-                prefixed={false}
-                className="w-28 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-mono uppercase outline-none focus:border-foreground"
-              />
+        <button
+          onClick={() => setShowCustom((s) => !s)}
+          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          {showCustom ? "Hide custom color picker" : "Use custom color"}
+        </button>
+        {showCustom && (
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center">
+            <div className="accent-picker">
+              <HexColorPicker color={color} onChange={setColor} />
             </div>
-            <p className="text-xs text-muted-foreground">Drag the saturation and hue sliders or type a hex value.</p>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">Hex</span>
+              <div className="flex items-center gap-2">
+                <span className="h-8 w-8 rounded border border-border" style={{ background: color }} />
+                <span className="text-sm text-muted-foreground">#</span>
+                <HexColorInput
+                  color={color}
+                  onChange={setColor}
+                  prefixed={false}
+                  className="w-28 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-mono uppercase outline-none focus:border-foreground"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Drag the saturation and hue sliders or type a hex value.</p>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
 
