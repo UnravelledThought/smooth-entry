@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Bookmark, Compass, Search, LogIn, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { useAuth, signOut } from "@/lib/auth";
 import {
@@ -14,6 +14,8 @@ import {
 export function Layout({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
+
 
   const nav = [
     { to: "/" as const, label: "Discover", icon: Compass },
@@ -60,16 +62,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel className="truncate">@{profile.username}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/u/$username" params={{ username: profile.username }} className="cursor-pointer">
-                      <UserIcon className="mr-2 h-4 w-4" /> Profile
-                    </Link>
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/u/$username", params: { username: profile.username } })}
+                    className="cursor-pointer"
+                  >
+                    <UserIcon className="mr-2 h-4 w-4" /> Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="cursor-pointer">
-                      <SettingsIcon className="mr-2 h-4 w-4" /> Settings
-                    </Link>
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/settings" })}
+                    className="cursor-pointer"
+                  >
+                    <SettingsIcon className="mr-2 h-4 w-4" /> Settings
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" /> Sign out
