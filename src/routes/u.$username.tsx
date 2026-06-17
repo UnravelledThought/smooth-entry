@@ -15,6 +15,10 @@ function PublicProfileRoute() { return <Layout><PublicProfile /></Layout>; }
 function PublicProfile() {
   const { username } = Route.useParams();
   const q = usePublicProfile(username);
+  const { user, refreshProfile } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [bioDraft, setBioDraft] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Apply this user's accent for their page
   useEffect(() => {
@@ -25,6 +29,10 @@ function PublicProfile() {
     }
   }, [q.data?.profile.accent_color]);
 
+  useEffect(() => {
+    if (q.data?.profile.bio) setBioDraft(q.data.profile.bio);
+  }, [q.data?.profile.bio]);
+
   if (q.isLoading) return <div className="px-5 py-12 text-sm text-muted-foreground">Loading…</div>;
   if (!q.data) return (
     <div className="mx-auto max-w-md px-5 py-24 text-center">
@@ -34,15 +42,57 @@ function PublicProfile() {
   );
 
   const { profile, pinned } = q.data;
+  const isOwner = user?.id === profile.id;
+
+  const saveBio = async () => {
+    setSaving(true);
+    await supabase.from("profiles").update({ bio: bioDraft }).eq("id", user!.id);
+    await refreshProfile();
+    setSaving(false);
+    setIsEditing(false);
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <div className="grid h-16 w-16 place-items-center rounded-full border-2" style={{ borderColor: profile.accent_color }}>
           <span className="font-display text-2xl font-bold">{profile.username[0].toUpperCase()}</span>
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="font-display text-3xl font-bold">{profile.username}</h1>
-          {profile.bio && <p className="mt-1 text-sm text-muted-foreground">{profile.bio}</p>}
+          {isEditing ? (
+            <div className="mt-2 space-y-2">
+              <textarea
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value)}
+                rows={3}
+                maxLength={240}
+                className="w-full resize-none rounded-lg border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-foreground"
+                placeholder="Tell other otakus about your taste."
+              />
+              <div className="flex items-center gap-2">
+                <button onClick={saveBio} disabled={saving} className="inline-flex items-center gap-1.5 accent-bg rounded-lg px-4 py-1.5 text-xs font-medium disabled:opacity-50">
+                  <Check className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save"}
+                </button>
+                <button onClick={() => { setIsEditing(false); setBioDraft(profile.bio ?? ""); }} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground">
+                  <X className="h-3.5 w-3.5" /> Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-1 flex items-center gap-2">
+              {profile.bio ? (
+                <p className="text-sm text-muted-foreground">{profile.bio}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No bio yet.</p>
+              )}
+              {isOwner && (
+                <button onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground">
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
