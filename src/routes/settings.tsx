@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { HexColorPicker, HexColorInput } from "react-colorful";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/lib/auth";
 import { useMyEntries, useUpdateEntry } from "@/lib/cloud-watchlist";
@@ -9,6 +10,7 @@ import { Pin, PinOff } from "lucide-react";
 export const Route = createFileRoute("/settings")({
   component: SettingsRoute,
 });
+
 
 function SettingsRoute() { return <Layout><Settings /></Layout>; }
 
