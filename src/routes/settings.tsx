@@ -75,17 +75,28 @@ function Settings() {
               aria-label={c}
             />
           ))}
-          <label className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs cursor-pointer">
-            <input
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="h-5 w-5 cursor-pointer rounded border-0 bg-transparent"
-            />
-            Custom
-          </label>
+        </div>
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center">
+          <div className="accent-picker">
+            <HexColorPicker color={color} onChange={setColor} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">Hex</span>
+            <div className="flex items-center gap-2">
+              <span className="h-8 w-8 rounded border border-border" style={{ background: color }} />
+              <span className="text-sm text-muted-foreground">#</span>
+              <HexColorInput
+                color={color}
+                onChange={setColor}
+                prefixed={false}
+                className="w-28 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-mono uppercase outline-none focus:border-foreground"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Drag the saturation and hue sliders or type a hex value.</p>
+          </div>
         </div>
       </section>
+
 
       <section className="space-y-2">
         <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Bio</h2>
