@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Bookmark, Compass, Search, LogIn, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { useAuth, signOut } from "@/lib/auth";
 import {
@@ -14,6 +14,8 @@ import {
 export function Layout({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
+
 
   const nav = [
     { to: "/" as const, label: "Discover", icon: Compass },
