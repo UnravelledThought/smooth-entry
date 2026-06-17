@@ -17,21 +17,17 @@ const PRESETS = ["#ff2d6f", "#ffffff", "#00e5ff", "#ffd400", "#9eff00", "#ff8a00
 function Settings() {
   const { user, profile, refreshProfile, loading } = useAuth();
   const [color, setColor] = useState("#ff2d6f");
-  const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
-    if (profile) { setColor(profile.accent_color); setBio(profile.bio ?? ""); }
+    if (profile) { setColor(profile.accent_color); }
   }, [profile]);
 
   // Live preview
   useEffect(() => {
     document.documentElement.style.setProperty("--accent-color", color);
   }, [color]);
-
-  const entries = useMyEntries();
-  const update = useUpdateEntry();
 
   if (loading) return <div className="px-5 py-12 text-sm text-muted-foreground">Loading…</div>;
   if (!user || !profile) {
@@ -45,13 +41,10 @@ function Settings() {
 
   const save = async () => {
     setSaving(true);
-    await supabase.from("profiles").update({ accent_color: color, bio }).eq("id", user.id);
+    await supabase.from("profiles").update({ accent_color: color }).eq("id", user.id);
     await refreshProfile();
     setSaving(false);
   };
-
-  const pinned = entries.data?.filter((e) => e.is_pinned) ?? [];
-  const others = entries.data?.filter((e) => !e.is_pinned) ?? [];
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 space-y-12">
