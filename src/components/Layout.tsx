@@ -62,16 +62,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel className="truncate">@{profile.username}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/u/$username" params={{ username: profile.username }} className="cursor-pointer">
-                      <UserIcon className="mr-2 h-4 w-4" /> Profile
-                    </Link>
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/u/$username", params: { username: profile.username } })}
+                    className="cursor-pointer"
+                  >
+                    <UserIcon className="mr-2 h-4 w-4" /> Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="cursor-pointer">
-                      <SettingsIcon className="mr-2 h-4 w-4" /> Settings
-                    </Link>
+                  <DropdownMenuItem
+                    onSelect={() => navigate({ to: "/settings" })}
+                    className="cursor-pointer"
+                  >
+                    <SettingsIcon className="mr-2 h-4 w-4" /> Settings
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" /> Sign out
