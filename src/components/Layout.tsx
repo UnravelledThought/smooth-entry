@@ -1,6 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bookmark, Compass, Search, User as UserIcon, LogIn } from "lucide-react";
+import { Bookmark, Compass, Search, LogIn, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { useAuth, signOut } from "@/lib/auth";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
