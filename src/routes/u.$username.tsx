@@ -53,13 +53,20 @@ function PublicProfile() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-12">
-      <div className="flex items-start gap-4">
-        <div className="grid h-16 w-16 place-items-center rounded-full border-2" style={{ borderColor: profile.accent_color }}>
-          <span className="font-display text-2xl font-bold">{profile.username[0].toUpperCase()}</span>
+    <div className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <div
+          className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border-2"
+          style={{ borderColor: profile.accent_color }}
+        >
+          {(profile as any).avatar_url ? (
+            <img src={(profile as any).avatar_url} alt={profile.username} className="h-full w-full object-cover" />
+          ) : (
+            <span className="font-display text-2xl font-bold">{profile.username[0].toUpperCase()}</span>
+          )}
         </div>
-        <div className="flex-1">
-          <h1 className="font-display text-3xl font-bold">{profile.username}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-3xl font-bold break-words">@{profile.username}</h1>
           {isEditing ? (
             <div className="mt-2 space-y-2">
               <textarea
