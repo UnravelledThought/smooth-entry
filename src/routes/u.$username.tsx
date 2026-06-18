@@ -19,6 +19,9 @@ function PublicProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [bioDraft, setBioDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // Apply this user's accent for their page
   useEffect(() => {
