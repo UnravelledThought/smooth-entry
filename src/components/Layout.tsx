@@ -52,21 +52,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-sm font-semibold uppercase transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background"
-                    style={{ background: profile.accent_color, color: "#000" }}
+                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border text-sm font-semibold uppercase transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background"
+                    style={!profile.avatar_url ? { background: profile.accent_color, color: "#000" } : undefined}
                     aria-label="Account menu"
                   >
-                    {profile.username.slice(0, 2)}
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt={profile.username} className="h-full w-full object-cover" />
+                    ) : (
+                      profile.username.slice(0, 2)
+                    )}
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="truncate">@{profile.username}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={() => navigate({ to: "/u/$username", params: { username: profile.username } })}
                     className="cursor-pointer"
                   >
-                    <UserIcon className="mr-2 h-4 w-4" /> Profile
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span className="truncate">Profile · @{profile.username}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => navigate({ to: "/settings" })}
