@@ -25,6 +25,7 @@ export type Profile = {
   username: string;
   accent_color: string;
   bio: string | null;
+  avatar_url: string | null;
 };
 
 type AuthCtx = {
