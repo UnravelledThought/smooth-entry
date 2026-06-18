@@ -98,8 +98,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         </div>
       </header>
-      {children}
-      <footer className="mt-24 border-t border-border py-6 text-center text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+      <main className="flex-1">{children}</main>
+      <footer className="mt-12 border-t border-border py-6 text-center text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
         AniTrack · Jikan / MAL
       </footer>
     </div>
