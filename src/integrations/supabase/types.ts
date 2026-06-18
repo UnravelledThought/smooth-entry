@@ -35,6 +35,7 @@ export type Database = {
       profiles: {
         Row: {
           accent_color: string
+          avatar_url: string | null
           bio: string | null
           created_at: string
           id: string
@@ -43,6 +44,7 @@ export type Database = {
         }
         Insert: {
           accent_color?: string
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id: string
@@ -51,6 +53,7 @@ export type Database = {
         }
         Update: {
           accent_color?: string
+          avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id?: string
