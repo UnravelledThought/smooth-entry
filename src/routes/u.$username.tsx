@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { usePublicProfile } from "@/lib/cloud-watchlist";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, Pencil, Check, X } from "lucide-react";
+import { Star, Pencil, Check, X, Camera } from "lucide-react";
 
 export const Route = createFileRoute("/u/$username")({
   component: PublicProfileRoute,
