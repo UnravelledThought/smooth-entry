@@ -143,7 +143,7 @@ export function usePublicProfile(username: string) {
     queryFn: async () => {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id, username, accent_color, bio, created_at")
+        .select("id, username, accent_color, bio, avatar_url, created_at")
         .ilike("username", username)
         .maybeSingle();
       if (!profile) return null;
