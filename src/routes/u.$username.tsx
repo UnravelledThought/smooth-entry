@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { usePublicProfile } from "@/lib/cloud-watchlist";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, Pencil, Check, X } from "lucide-react";
+import { Star, Pencil, Check, X, Camera } from "lucide-react";
 
 export const Route = createFileRoute("/u/$username")({
   component: PublicProfileRoute,
@@ -19,6 +19,9 @@ function PublicProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [bioDraft, setBioDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // Apply this user's accent for their page
   useEffect(() => {
@@ -48,25 +51,77 @@ function PublicProfile() {
     setSaving(true);
     await supabase.from("profiles").update({ bio: bioDraft }).eq("id", user!.id);
     await refreshProfile();
+    q.refetch();
     setSaving(false);
     setIsEditing(false);
+  };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    setUploadError(null);
+    if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) {
+      setUploadError("Use JPG, PNG, or GIF.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Max 5MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, {
+        contentType: file.type,
+        upsert: true,
+      });
+      if (upErr) throw upErr;
+      const { data: signed, error: sErr } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (sErr) throw sErr;
+      await supabase.from("profiles").update({ avatar_url: signed.signedUrl }).eq("id", user.id);
+      await refreshProfile();
+      q.refetch();
+    } catch (err: any) {
+      setUploadError(err?.message ?? "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-10 sm:py-12">
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <div
-          className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border-2"
+          className="group relative grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border-2"
           style={{ borderColor: profile.accent_color }}
         >
           {(profile as any).avatar_url ? (
             <img src={(profile as any).avatar_url} alt={profile.username} className="h-full w-full object-cover" />
           ) : (
-            <span className="font-display text-2xl font-bold">{profile.username[0].toUpperCase()}</span>
+            <span className="font-display text-3xl font-bold">{profile.username[0].toUpperCase()}</span>
+          )}
+          {isOwner && (
+            <>
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="absolute inset-0 grid place-items-center bg-black/55 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                aria-label="Change profile picture"
+                title="Change profile picture"
+              >
+                <Camera className="h-5 w-5" />
+              </button>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif" hidden onChange={onFile} />
+            </>
           )}
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-3xl font-bold break-words">@{profile.username}</h1>
+          {uploadError && <p className="mt-1 text-xs text-destructive">{uploadError}</p>}
           {isEditing ? (
             <div className="mt-2 space-y-2">
               <textarea
