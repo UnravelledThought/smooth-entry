@@ -120,7 +120,7 @@ function PublicProfile() {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-3xl font-bold break-words">@{profile.username}</h1>
+          <h1 className="font-display text-3xl font-bold break-words">{profile.username}</h1>
           {uploadError && <p className="mt-1 text-xs text-destructive">{uploadError}</p>}
           {isEditing ? (
             <div className="mt-2 space-y-2">
