@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, Pencil, Check, X, Camera } from "lucide-react";
 
-export const Route = createFileRoute("/u/$username")({
+export const Route = createFileRoute("/u/$slug")({
   component: PublicProfileRoute,
 });
 
