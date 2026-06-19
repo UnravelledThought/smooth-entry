@@ -22,6 +22,7 @@ const usernameToEmail = (username: string) => `${username.toLowerCase()}@otaku.l
 
 export type Profile = {
   id: string;
+  uid: number;
   username: string;
   accent_color: string;
   bio: string | null;
