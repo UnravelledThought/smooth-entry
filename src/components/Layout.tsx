@@ -64,14 +64,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel className="truncate">@{profile.username}</DropdownMenuLabel>
+                  <DropdownMenuLabel className="truncate">
+                    <div className="truncate">{profile.username}</div>
+                    <div className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">UserID</div>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={() => navigate({ to: "/u/$username", params: { username: profile.username } })}
                     className="cursor-pointer"
                   >
                     <UserIcon className="mr-2 h-4 w-4" />
-                    <span className="truncate">Profile · @{profile.username}</span>
+                    <span className="truncate">Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => navigate({ to: "/settings" })}
