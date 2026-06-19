@@ -86,7 +86,7 @@ function SharedFeed() {
                   shared by{" "}
                   {e.profile?.username ? (
                     <Link to="/u/$username" params={{ username: e.profile.username }} className="hover:accent-text">
-                      @{e.profile.username}
+                      {e.profile.username}
                     </Link>
                   ) : "someone"}
                 </p>
