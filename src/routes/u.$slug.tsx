@@ -6,15 +6,19 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, Pencil, Check, X, Camera } from "lucide-react";
 
-export const Route = createFileRoute("/u/$username")({
+export const Route = createFileRoute("/u/$slug")({
   component: PublicProfileRoute,
 });
 
 function PublicProfileRoute() { return <Layout><PublicProfile /></Layout>; }
 
 function PublicProfile() {
-  const { username } = Route.useParams();
-  const q = usePublicProfile(username);
+  const { slug } = Route.useParams();
+  const lastDot = slug.lastIndexOf(".");
+  const username = lastDot > 0 ? slug.slice(0, lastDot) : slug;
+  const uidPart = lastDot > 0 ? slug.slice(lastDot + 1) : null;
+  const uid = uidPart && /^\d+$/.test(uidPart) ? Number(uidPart) : null;
+  const q = usePublicProfile(username, uid);
   const { user, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [bioDraft, setBioDraft] = useState("");

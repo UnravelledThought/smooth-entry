@@ -56,7 +56,7 @@ export function useMyEntryFor(malId: number) {
   });
 }
 
-export type SharedEntry = CloudEntry & { profile: { username: string; accent_color: string } | null };
+export type SharedEntry = CloudEntry & { profile: { username: string; accent_color: string; uid: number } | null };
 
 export function useSharedFeed(limit = 12) {
   return useQuery({
@@ -71,13 +71,13 @@ export function useSharedFeed(limit = 12) {
       if (error) throw error;
       const rows = (data ?? []) as CloudEntry[];
       const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
-      let profileMap = new Map<string, { username: string; accent_color: string }>();
+      let profileMap = new Map<string, { username: string; accent_color: string; uid: number }>();
       if (userIds.length > 0) {
         const { data: profs } = await supabase
           .from("profiles")
-          .select("id, username, accent_color")
+          .select("id, username, accent_color, uid")
           .in("id", userIds);
-        for (const p of profs ?? []) profileMap.set(p.id, { username: p.username, accent_color: p.accent_color });
+        for (const p of profs ?? []) profileMap.set((p as any).id, { username: (p as any).username, accent_color: (p as any).accent_color, uid: (p as any).uid });
       }
       return rows.map((r) => ({ ...r, profile: profileMap.get(r.user_id) ?? null }));
     },
@@ -137,20 +137,21 @@ export function useDeleteEntry() {
   });
 }
 
-export function usePublicProfile(username: string) {
+export function usePublicProfile(username: string, uid?: number | null) {
   return useQuery({
-    queryKey: ["public-profile", username],
+    queryKey: ["public-profile", username, uid ?? null],
     queryFn: async () => {
-      const { data: profile } = await supabase
+      let query = supabase
         .from("profiles")
-        .select("id, username, accent_color, bio, avatar_url, created_at")
-        .ilike("username", username)
-        .maybeSingle();
+        .select("id, uid, username, accent_color, bio, avatar_url, created_at")
+        .ilike("username", username);
+      if (uid != null) query = query.eq("uid", uid);
+      const { data: profile } = await query.maybeSingle();
       if (!profile) return null;
       const { data: pinned } = await supabase
         .from("watchlist_entries")
         .select("*")
-        .eq("user_id", profile.id)
+        .eq("user_id", (profile as any).id)
         .eq("is_pinned", true)
         .order("updated_at", { ascending: false });
       return { profile, pinned: (pinned ?? []) as CloudEntry[] };

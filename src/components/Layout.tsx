@@ -72,7 +72,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onSelect={() => navigate({ to: "/u/$username", params: { username: profile.username } })}
+                    onSelect={() => navigate({ to: "/u/$slug", params: { slug: `${profile.username}.${(profile as any).uid}` } })}
                     className="cursor-pointer"
                   >
                     <UserIcon className="mr-2 h-4 w-4" />
