@@ -137,20 +137,21 @@ export function useDeleteEntry() {
   });
 }
 
-export function usePublicProfile(username: string) {
+export function usePublicProfile(username: string, uid?: number | null) {
   return useQuery({
-    queryKey: ["public-profile", username],
+    queryKey: ["public-profile", username, uid ?? null],
     queryFn: async () => {
-      const { data: profile } = await supabase
+      let query = supabase
         .from("profiles")
-        .select("id, username, accent_color, bio, avatar_url, created_at")
-        .ilike("username", username)
-        .maybeSingle();
+        .select("id, uid, username, accent_color, bio, avatar_url, created_at")
+        .ilike("username", username);
+      if (uid != null) query = query.eq("uid", uid);
+      const { data: profile } = await query.maybeSingle();
       if (!profile) return null;
       const { data: pinned } = await supabase
         .from("watchlist_entries")
         .select("*")
-        .eq("user_id", profile.id)
+        .eq("user_id", (profile as any).id)
         .eq("is_pinned", true)
         .order("updated_at", { ascending: false });
       return { profile, pinned: (pinned ?? []) as CloudEntry[] };
