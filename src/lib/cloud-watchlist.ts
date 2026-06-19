@@ -56,7 +56,7 @@ export function useMyEntryFor(malId: number) {
   });
 }
 
-export type SharedEntry = CloudEntry & { profile: { username: string; accent_color: string } | null };
+export type SharedEntry = CloudEntry & { profile: { username: string; accent_color: string; uid: number } | null };
 
 export function useSharedFeed(limit = 12) {
   return useQuery({
@@ -71,13 +71,13 @@ export function useSharedFeed(limit = 12) {
       if (error) throw error;
       const rows = (data ?? []) as CloudEntry[];
       const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
-      let profileMap = new Map<string, { username: string; accent_color: string }>();
+      let profileMap = new Map<string, { username: string; accent_color: string; uid: number }>();
       if (userIds.length > 0) {
         const { data: profs } = await supabase
           .from("profiles")
-          .select("id, username, accent_color")
+          .select("id, username, accent_color, uid")
           .in("id", userIds);
-        for (const p of profs ?? []) profileMap.set(p.id, { username: p.username, accent_color: p.accent_color });
+        for (const p of profs ?? []) profileMap.set((p as any).id, { username: (p as any).username, accent_color: (p as any).accent_color, uid: (p as any).uid });
       }
       return rows.map((r) => ({ ...r, profile: profileMap.get(r.user_id) ?? null }));
     },
