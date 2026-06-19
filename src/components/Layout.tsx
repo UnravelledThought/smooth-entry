@@ -66,7 +66,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="truncate">
                     <div className="truncate">{profile.username}</div>
-                    <div className="text-[10px] font-normal uppercase tracking-wider text-muted-foreground">UserID</div>
+                    {(profile as any).uid != null && (
+                      <div className="text-[10px] font-normal tracking-wider text-muted-foreground">#{(profile as any).uid}</div>
+                    )}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
