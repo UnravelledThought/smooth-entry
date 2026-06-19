@@ -126,9 +126,6 @@ function PublicProfile() {
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-3xl font-bold break-words">
             {profile.username}
-            {(profile as any).uid != null && (
-              <span className="ml-2 align-middle text-sm font-normal text-muted-foreground">#{(profile as any).uid}</span>
-            )}
           </h1>
           {uploadError && <p className="mt-1 text-xs text-destructive">{uploadError}</p>}
           {isEditing ? (
