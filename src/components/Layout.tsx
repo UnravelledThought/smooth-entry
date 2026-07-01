@@ -1,6 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Bookmark, Compass, Search, LogIn, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { useAuth, signOut } from "@/lib/auth";
+import { Logo } from "@/components/brand/Logo";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -27,8 +28,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
-          <Link to="/" className="font-display text-lg font-semibold tracking-tight">
-            ani<span className="accent-text">track</span>
+          <Link to="/" aria-label="AniTrack home" className="text-foreground">
+            <Logo variant="lockup" size="md" />
           </Link>
           <nav className="flex items-center gap-1">
             {nav.map(({ to, label, icon: Icon }) => {

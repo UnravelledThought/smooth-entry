@@ -5,6 +5,7 @@ import { usePublicProfile } from "@/lib/cloud-watchlist";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, Pencil, Check, X, Camera } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 export const Route = createFileRoute("/u/$slug")({
   component: PublicProfileRoute,
@@ -40,7 +41,7 @@ function PublicProfile() {
     if (q.data?.profile.bio) setBioDraft(q.data.profile.bio);
   }, [q.data?.profile.bio]);
 
-  if (q.isLoading) return <div className="px-5 py-12 text-sm text-muted-foreground">Loading…</div>;
+  if (q.isLoading) return <div className="grid min-h-[60vh] place-items-center"><Logo variant="ring" size="lg" spin /></div>;
   if (!q.data) return (
     <div className="mx-auto max-w-md px-5 py-24 text-center">
       <h1 className="font-display text-3xl font-bold">User not found</h1>
