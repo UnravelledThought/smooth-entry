@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
+import { Logo } from "@/components/brand/Logo";
 import {
   signInWithUsername, signUpWithUsername,
   validatePassword, validateUsername, useAuth,
@@ -46,6 +47,7 @@ function AuthPage() {
 
   return (
     <div className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-5 py-12">
+      <div className="mb-8"><Logo variant="lockup" size="lg" /></div>
       <h1 className="font-display text-4xl font-bold">
         {mode === "signin" ? "Welcome back" : "Make an account"}
       </h1>

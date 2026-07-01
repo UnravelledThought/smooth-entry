@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Palette } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsRoute,
@@ -45,7 +46,7 @@ function Settings() {
     return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
   }, [color, user, profile, refreshProfile]);
 
-  if (loading) return <div className="px-5 py-12 text-sm text-muted-foreground">Loading…</div>;
+  if (loading) return <div className="grid min-h-[60vh] place-items-center"><Logo variant="ring" size="lg" spin /></div>;
   if (!user || !profile) {
     return (
       <div className="mx-auto max-w-md px-5 py-24 text-center">

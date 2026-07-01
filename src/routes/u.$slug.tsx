@@ -5,6 +5,7 @@ import { usePublicProfile } from "@/lib/cloud-watchlist";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, Pencil, Check, X, Camera } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 export const Route = createFileRoute("/u/$slug")({
   component: PublicProfileRoute,
