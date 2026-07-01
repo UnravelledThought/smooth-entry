@@ -2,56 +2,40 @@ import * as React from "react";
 
 type Props = React.HTMLAttributes<HTMLSpanElement> & {
   showAccent?: boolean;
-  underline?: boolean;
 };
 
 /**
- * Typographic wordmark. Uses Syne (loaded in __root.tsx) via font-display.
- * The dot on the "i" is replaced with an accent-colored square; an optional
- * underline tick under "Track" adds a second accent beat.
+ * Wordmark: "aniTrack" in Syne. The dot on the "i" gets recolored via
+ * a small overlaid accent square positioned over the natural glyph dot.
+ * Falls back to a pure text wordmark when accent is hidden.
  */
-export function LogoWordmark({ showAccent = true, underline = false, className, ...props }: Props) {
+export function LogoWordmark({ showAccent = true, className, ...props }: Props) {
   return (
     <span
-      className={`font-display inline-flex items-baseline text-current ${className ?? ""}`}
-      style={{ letterSpacing: "-0.03em", fontWeight: 700, lineHeight: 1 }}
+      className={`font-display inline-flex items-baseline text-current leading-none ${className ?? ""}`}
+      style={{ letterSpacing: "-0.035em", fontWeight: 700, fontFamily: "Syne, system-ui, sans-serif" }}
       {...props}
     >
       <span>an</span>
-      {/* Custom "i" — dotless glyph + accent square dot */}
-      <span className="relative inline-block" aria-hidden="true">
-        <span style={{ visibility: "hidden" }}>i</span>
-        <span
-          className="absolute left-0 right-0"
-          style={{
-            bottom: "0.05em",
-            height: "0.65em",
-            borderLeft: "0.11em solid currentColor",
-            marginLeft: "0.16em",
-          }}
-        />
+      <span className="relative inline-block">
+        <span>i</span>
         {showAccent && (
           <span
-            className="absolute"
+            aria-hidden
+            className="absolute rounded-[1px]"
             style={{
-              top: "-0.02em",
-              left: "0.08em",
-              width: "0.24em",
-              height: "0.24em",
+              top: "0.05em",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "0.22em",
+              height: "0.22em",
               background: "var(--accent-color)",
+              boxShadow: "0 0 0 0.06em var(--background, #000)",
             }}
           />
         )}
       </span>
-      <span className="relative">
-        Track
-        {showAccent && underline && (
-          <span
-            className="absolute left-0 right-0"
-            style={{ bottom: "-0.15em", height: "0.08em", background: "var(--accent-color)" }}
-          />
-        )}
-      </span>
+      <span>Track</span>
     </span>
   );
 }
