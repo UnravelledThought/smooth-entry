@@ -1,0 +1,172 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
+import { Layout } from "@/components/Layout";
+import { useAuth } from "@/lib/auth";
+import { useMyEntries, type CloudEntry } from "@/lib/cloud-watchlist";
+import { BarChart3, Clock, Film, Star, Trophy, Tv } from "lucide-react";
+
+export const Route = createFileRoute("/stats")({ component: () => <Layout><StatsPage /></Layout> });
+
+const AVG_EP_MIN = 24;
+
+function StatsPage() {
+  const { user, loading } = useAuth();
+  const q = useMyEntries();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/auth", replace: true });
+  }, [loading, user, navigate]);
+
+  const stats = useMemo(() => compute(q.data ?? []), [q.data]);
+
+  if (loading || !user) return <div className="px-5 py-12 text-sm text-muted-foreground">…</div>;
+  if (q.isLoading) return <div className="px-5 py-12 text-sm text-muted-foreground">Crunching numbers…</div>;
+
+  const list = q.data ?? [];
+  if (list.length === 0) {
+    return (
+      <div className="mx-auto max-w-md px-5 py-24 text-center">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-border">
+          <BarChart3 className="h-5 w-5" />
+        </div>
+        <h1 className="mt-6 font-display text-3xl font-bold">No stats yet</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Track shows to unlock insights.</p>
+        <Link to="/" className="mt-6 inline-block accent-bg rounded-lg px-6 py-2.5 text-sm font-semibold">Browse</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl px-5 py-12 space-y-10">
+      <div>
+        <h1 className="font-display text-4xl font-bold">Stats</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Your tracking, by the numbers.</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={Tv} label="Tracked" value={stats.total.toString()} />
+        <StatCard icon={Film} label="Episodes watched" value={stats.episodes.toLocaleString()} />
+        <StatCard icon={Clock} label="Hours watched" value={stats.hours.toLocaleString()} sub={`${stats.days} days`} />
+        <StatCard icon={Star} label="Mean score" value={stats.mean ? stats.mean.toFixed(2) : "—"} sub={`${stats.rated} rated`} />
+      </div>
+
+      <section className="rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Status breakdown</h2>
+        <div className="mt-4 space-y-3">
+          {stats.statusRows.map((r) => (
+            <div key={r.key}>
+              <div className="mb-1 flex items-center justify-between text-sm">
+                <span>{r.label}</span>
+                <span className="font-mono text-muted-foreground">{r.count}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-border">
+                <div className="h-full accent-bg" style={{ width: `${r.pct}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <MiniStat label="Completion rate" value={`${stats.completionRate}%`} />
+          <MiniStat label="Avg episodes / show" value={stats.avgEpisodes.toFixed(1)} />
+          <MiniStat label="Longest run" value={stats.longest ? `${stats.longest.progress} ep` : "—"} sub={stats.longest?.title} />
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+            <Trophy className="h-3.5 w-3.5" /> Top rated
+          </div>
+          <div className="mt-4 space-y-2">
+            {stats.topRated.length === 0 && <p className="text-sm text-muted-foreground">Rate shows to see them here.</p>}
+            {stats.topRated.map((e, i) => (
+              <Link
+                key={e.id}
+                to="/anime/$id"
+                params={{ id: String(e.mal_id) }}
+                className="flex items-center gap-3 rounded-lg p-2 hover:bg-background/50"
+              >
+                <span className="w-5 text-center font-mono text-xs text-muted-foreground">{i + 1}</span>
+                <img src={e.image_url} alt="" className="h-12 w-8 rounded object-cover" />
+                <span className="flex-1 truncate text-sm">{e.title}</span>
+                <span className="flex items-center gap-1 text-xs accent-text"><Star className="h-3 w-3 fill-current" />{e.personal_score?.toFixed(1)}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Score distribution</h2>
+          <div className="mt-4 flex h-32 items-end gap-1">
+            {stats.scoreBuckets.map((n, i) => {
+              const max = Math.max(...stats.scoreBuckets, 1);
+              return (
+                <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                  <div className="w-full accent-bg rounded-sm" style={{ height: `${(n / max) * 100}%`, minHeight: n > 0 ? 2 : 0 }} />
+                  <span className="text-[10px] text-muted-foreground">{i + 1}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, sub }: { icon: any; label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
+      <div className="mt-2 font-display text-3xl font-bold">{value}</div>
+      {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+    </div>
+  );
+}
+
+function MiniStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="mt-1 font-display text-xl font-semibold">{value}</div>
+      {sub && <div className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</div>}
+    </div>
+  );
+}
+
+function compute(list: CloudEntry[]) {
+  const total = list.length;
+  const episodes = list.reduce((s, e) => s + (e.progress || 0), 0);
+  const minutes = episodes * AVG_EP_MIN;
+  const hours = Math.round(minutes / 60);
+  const days = Math.round((minutes / 60 / 24) * 10) / 10;
+
+  const rated = list.filter((e) => e.personal_score != null);
+  const mean = rated.length ? rated.reduce((s, e) => s + (e.personal_score ?? 0), 0) / rated.length : 0;
+
+  const counts = { watching: 0, completed: 0, plan: 0, dropped: 0 } as Record<string, number>;
+  for (const e of list) counts[e.status]++;
+  const statusRows = [
+    { key: "watching", label: "Watching", count: counts.watching },
+    { key: "completed", label: "Completed", count: counts.completed },
+    { key: "plan", label: "Plan to watch", count: counts.plan },
+    { key: "dropped", label: "Dropped", count: counts.dropped },
+  ].map((r) => ({ ...r, pct: total ? (r.count / total) * 100 : 0 }));
+
+  const completionRate = total ? Math.round((counts.completed / total) * 100) : 0;
+  const avgEpisodes = total ? episodes / total : 0;
+  const longest = list.slice().sort((a, b) => b.progress - a.progress)[0];
+
+  const topRated = rated.slice().sort((a, b) => (b.personal_score ?? 0) - (a.personal_score ?? 0)).slice(0, 5);
+
+  const scoreBuckets = Array.from({ length: 10 }, () => 0);
+  for (const e of rated) {
+    const idx = Math.min(9, Math.max(0, Math.ceil((e.personal_score ?? 0)) - 1));
+    scoreBuckets[idx]++;
+  }
+
+  return { total, episodes, hours, days, mean, rated: rated.length, statusRows, completionRate, avgEpisodes, longest, topRated, scoreBuckets };
+}
