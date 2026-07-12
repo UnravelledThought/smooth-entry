@@ -4,7 +4,9 @@ import { HexColorPicker, HexColorInput } from "react-colorful";
 import { Layout } from "@/components/Layout";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Palette } from "lucide-react";
+import { Palette, Download, Upload } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toMalXml, parseMalXml, importEntries } from "@/lib/mal-io";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsRoute,
@@ -104,6 +106,85 @@ function Settings() {
           </div>
         )}
       </section>
+
+      <ImportExport userId={user.id} />
     </div>
+  );
+}
+
+function ImportExport({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const doExport = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const { data } = await supabase.from("watchlist_entries").select("*").eq("user_id", userId);
+      const xml = toMalXml((data ?? []) as any);
+      const blob = new Blob([xml], { type: "application/xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `anitrack-export-${new Date().toISOString().slice(0, 10)}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setMsg(`Exported ${data?.length ?? 0} entries.`);
+    } catch (e: any) {
+      setMsg(`Export failed: ${e.message}`);
+    } finally { setBusy(false); }
+  };
+
+  const doImport = async (file: File) => {
+    setBusy(true); setMsg(null);
+    try {
+      const text = await file.text();
+      const parsed = parseMalXml(text);
+      if (parsed.length === 0) throw new Error("No entries found in file.");
+      const res = await importEntries(userId, parsed);
+      setMsg(`Imported ${res.imported} new · skipped ${res.skipped} duplicates.`);
+      qc.invalidateQueries({ queryKey: ["entries", userId] });
+    } catch (e: any) {
+      setMsg(`Import failed: ${e.message}`);
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Import / Export</h2>
+      <div className="rounded-lg border border-border bg-surface p-5 space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Compatible with MyAnimeList XML export. Bring your history in or take it with you.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={doExport}
+            disabled={busy}
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background disabled:opacity-50"
+          >
+            <Download className="h-3.5 w-3.5" /> Export XML
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+            className="inline-flex items-center gap-2 rounded-full accent-bg px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            <Upload className="h-3.5 w-3.5" /> Import MAL XML
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xml,application/xml,text/xml"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) doImport(f); }}
+          />
+        </div>
+        {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+      </div>
+    </section>
   );
 }

@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Compass, Search, LogIn, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Bookmark, Compass, Search, LogIn, User as UserIcon, Settings as SettingsIcon, LogOut, BarChart3 } from "lucide-react";
 import { useAuth, signOut } from "@/lib/auth";
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { to: "/" as const, label: "Discover", icon: Compass },
     { to: "/search" as const, label: "Search", icon: Search },
     { to: "/list" as const, label: "List", icon: Bookmark },
+    { to: "/stats" as const, label: "Stats", icon: BarChart3 },
   ];
 
   return (
