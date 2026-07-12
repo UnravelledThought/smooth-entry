@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
-import { getTopAnime, getSeasonNow } from "@/lib/anime-api";
+import { getTopAnime, getSeasonNow, getLatestReleases } from "@/lib/anime-api";
 import { useSharedFeed } from "@/lib/cloud-watchlist";
 import { useAuth } from "@/lib/auth";
 import { ArrowRight, Share2 } from "lucide-react";
