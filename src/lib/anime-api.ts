@@ -28,17 +28,6 @@ export async function getSeasonNow(): Promise<Anime[]> {
   return v ?? [];
 }
 
-export async function getLatestReleases(): Promise<Anime[]> {
-  const v = (await fetchAnimeCached({
-    data: {
-      key: "latest",
-      path: "anime?status=airing&order_by=start_date&sort=desc&limit=12&sfw=true",
-    },
-  })) as Anime[] | null;
-  return v ?? [];
-}
-
-
 export async function searchAnime(q: string): Promise<Anime[]> {
   const query = q.trim().toLowerCase();
   if (!query) return [];

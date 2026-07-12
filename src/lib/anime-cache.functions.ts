@@ -8,9 +8,7 @@ const BASE = "https://api.jikan.moe/v4";
 const ALLOWED = new Set<string>([
   "top/anime?limit=18",
   "seasons/now?limit=12",
-  "anime?status=airing&order_by=start_date&sort=desc&limit=12&sfw=true",
 ]);
-
 
 function isAllowed(path: string): boolean {
   if (ALLOWED.has(path)) return true;
