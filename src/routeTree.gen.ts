@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ListRouteImport } from './routes/list'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as USlugRouteImport } from './routes/u.$slug'
 import { Route as AnimeIdRouteImport } from './routes/anime.$id'
 
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/list': typeof ListRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/stats': typeof StatsRoute
   '/anime/$id': typeof AnimeIdRoute
   '/u/$slug': typeof USlugRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/list': typeof ListRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/stats': typeof StatsRoute
   '/anime/$id': typeof AnimeIdRoute
   '/u/$slug': typeof USlugRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/list': typeof ListRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/stats': typeof StatsRoute
   '/anime/$id': typeof AnimeIdRoute
   '/u/$slug': typeof USlugRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/search'
     | '/settings'
+    | '/stats'
     | '/anime/$id'
     | '/u/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/search'
     | '/settings'
+    | '/stats'
     | '/anime/$id'
     | '/u/$slug'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/search'
     | '/settings'
+    | '/stats'
     | '/anime/$id'
     | '/u/$slug'
   fileRoutesById: FileRoutesById
@@ -117,12 +129,20 @@ export interface RootRouteChildren {
   ListRoute: typeof ListRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
+  StatsRoute: typeof StatsRoute
   AnimeIdRoute: typeof AnimeIdRoute
   USlugRoute: typeof USlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -181,19 +201,10 @@ const rootRouteChildren: RootRouteChildren = {
   ListRoute: ListRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
+  StatsRoute: StatsRoute,
   AnimeIdRoute: AnimeIdRoute,
   USlugRoute: USlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

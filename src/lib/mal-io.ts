@@ -1,0 +1,129 @@
+import { supabase } from "@/integrations/supabase/client";
+import type { CloudEntry, WatchStatus } from "./cloud-watchlist";
+
+// MyAnimeList XML export format compatibility.
+// Reference: https://myanimelist.net/panel.php?go=export
+
+const MAL_TO_STATUS: Record<string, WatchStatus> = {
+  watching: "watching",
+  "1": "watching",
+  completed: "completed",
+  "2": "completed",
+  onhold: "plan",
+  "on-hold": "plan",
+  "3": "plan",
+  dropped: "dropped",
+  "4": "dropped",
+  plantowatch: "plan",
+  "plan to watch": "plan",
+  "6": "plan",
+};
+
+const STATUS_TO_MAL: Record<WatchStatus, string> = {
+  watching: "Watching",
+  completed: "Completed",
+  plan: "Plan to Watch",
+  dropped: "Dropped",
+};
+
+function esc(s: string | number | null | undefined) {
+  return String(s ?? "").replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c] as string));
+}
+
+export function toMalXml(entries: CloudEntry[]): string {
+  const completed = entries.filter((e) => e.status === "completed").length;
+  const watching = entries.filter((e) => e.status === "watching").length;
+  const plan = entries.filter((e) => e.status === "plan").length;
+  const dropped = entries.filter((e) => e.status === "dropped").length;
+
+  const items = entries
+    .map(
+      (e) => `  <anime>
+    <series_animedb_id>${e.mal_id}</series_animedb_id>
+    <series_title><![CDATA[${e.title}]]></series_title>
+    <series_episodes>${e.episodes ?? 0}</series_episodes>
+    <my_watched_episodes>${e.progress ?? 0}</my_watched_episodes>
+    <my_score>${e.personal_score != null ? Math.round(e.personal_score) : 0}</my_score>
+    <my_status>${esc(STATUS_TO_MAL[e.status])}</my_status>
+    <update_on_import>1</update_on_import>
+  </anime>`,
+    )
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8" ?>
+<myanimelist>
+  <myinfo>
+    <user_export_type>1</user_export_type>
+    <user_total_anime>${entries.length}</user_total_anime>
+    <user_total_watching>${watching}</user_total_watching>
+    <user_total_completed>${completed}</user_total_completed>
+    <user_total_onhold>0</user_total_onhold>
+    <user_total_dropped>${dropped}</user_total_dropped>
+    <user_total_plantowatch>${plan}</user_total_plantowatch>
+  </myinfo>
+${items}
+</myanimelist>`;
+}
+
+export interface ParsedEntry {
+  mal_id: number;
+  title: string;
+  episodes: number | null;
+  progress: number;
+  personal_score: number | null;
+  status: WatchStatus;
+}
+
+export function parseMalXml(xml: string): ParsedEntry[] {
+  const doc = new DOMParser().parseFromString(xml, "text/xml");
+  const err = doc.querySelector("parsererror");
+  if (err) throw new Error("Invalid XML file");
+  const nodes = Array.from(doc.getElementsByTagName("anime"));
+  const out: ParsedEntry[] = [];
+  for (const n of nodes) {
+    const id = Number(n.getElementsByTagName("series_animedb_id")[0]?.textContent?.trim());
+    if (!id) continue;
+    const title = n.getElementsByTagName("series_title")[0]?.textContent?.trim() ?? `#${id}`;
+    const eps = Number(n.getElementsByTagName("series_episodes")[0]?.textContent?.trim());
+    const progress = Number(n.getElementsByTagName("my_watched_episodes")[0]?.textContent?.trim() || "0");
+    const score = Number(n.getElementsByTagName("my_score")[0]?.textContent?.trim() || "0");
+    const statusRaw = (n.getElementsByTagName("my_status")[0]?.textContent?.trim() || "plantowatch").toLowerCase().replace(/\s+/g, "");
+    const status: WatchStatus = MAL_TO_STATUS[statusRaw] ?? "plan";
+    out.push({
+      mal_id: id,
+      title,
+      episodes: Number.isFinite(eps) && eps > 0 ? eps : null,
+      progress: Number.isFinite(progress) ? progress : 0,
+      personal_score: score > 0 ? score : null,
+      status,
+    });
+  }
+  return out;
+}
+
+export async function importEntries(userId: string, parsed: ParsedEntry[]): Promise<{ imported: number; skipped: number }> {
+  if (parsed.length === 0) return { imported: 0, skipped: 0 };
+  const ids = parsed.map((p) => p.mal_id);
+  const { data: existing } = await supabase
+    .from("watchlist_entries")
+    .select("mal_id")
+    .eq("user_id", userId)
+    .in("mal_id", ids);
+  const existingIds = new Set((existing ?? []).map((r: any) => r.mal_id));
+  const rows = parsed
+    .filter((p) => !existingIds.has(p.mal_id))
+    .map((p) => ({
+      user_id: userId,
+      mal_id: p.mal_id,
+      title: p.title,
+      image_url: `https://cdn.myanimelist.net/images/anime/1/${p.mal_id}.jpg`,
+      episodes: p.episodes,
+      progress: p.progress,
+      personal_score: p.personal_score,
+      status: p.status,
+    }));
+  if (rows.length === 0) return { imported: 0, skipped: parsed.length };
+  const { error } = await supabase.from("watchlist_entries").insert(rows);
+  if (error) throw error;
+  return { imported: rows.length, skipped: parsed.length - rows.length };
+}
