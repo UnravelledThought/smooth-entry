@@ -4,7 +4,7 @@
 
 Overall risk: **Medium**. No exposed secrets, no admin surface, RLS is enabled on every table with real owner-scoped policies, and the database linter is clean. The biggest real risk is the **shared anime cache server function**: it is unauthenticated and accepts arbitrary search terms, so anyone can drive unlimited outbound API calls and unlimited writes into your `anime_cache` table (cost + storage abuse, no rate limit anywhere).
 
-Second-biggest: the login identity model. Usernames are publicly readable and the login email is a deterministic `username@otaku.local`, so every account's login identifier is guessable by design — that turns the public profile list into a target list for password guessing.
+Second-biggest: the login identity model. There are no emails by design (usernames map to synthetic `@otaku.local` addresses, no verification, no user data collected), so the password is the only secret — and usernames are publicly readable, which turns the public profile list into a target list for password guessing. The fix is throttling, not email.
 
 Recommendation: fix the cache endpoint and add basic abuse limits before launch; the rest is hardening.
 
@@ -14,18 +14,18 @@ Recommendation: fix the cache endpoint and add basic abuse limits before launch;
 |---|---|---|---|---|---|
 | Unauthenticated cache server function writes to DB and calls Jikan | High | Verified (no middleware, allowlist accepts any `q=`) | Anyone can loop random search terms: unbounded upstream API calls (rate-limit ban) and unbounded rows in `anime_cache` | Require auth, cap key shape/length, add per-user throttle, cap row count / add cleanup | `src/lib/anime-cache.functions.ts` |
 | No rate limiting on sign-in / sign-up | High | Verified (no limiter in code) | Credential guessing, signup flooding | Rely on provider limits + add client-side backoff and per-username cooldown | `src/lib/auth.tsx`, `src/routes/auth.tsx` |
-| Login email derivable from public username | Medium | Verified (`username@otaku.local`, profiles readable by `anon`) | Public profile list doubles as a valid-account list for guessing | Accept (design choice) but pair with the rate limiting above; keep failure message generic (already generic) | `src/lib/auth.tsx` |
+| Password is the only credential (no email, no reset path) | Medium | Verified (`username@otaku.local`, profiles readable by `anon`) | Intentional: no emails, no verification, no recovery. Means guessing a password is the whole attack, and valid usernames are public | Keep the no-email design; compensate with login throttling and a leaked-password check at signup. Tell users a forgotten password cannot be recovered | `src/lib/auth.tsx` |
 | "Account required" is frontend-only | Medium | Verified (redirects in components; `anon` has SELECT on profiles + shared/pinned entries) | A logged-out visitor can read shared/pinned data directly via the API even though the UI redirects | Decide intent: if the feed/profiles are meant to be public this is fine; if not, drop `anon` grants and gate reads | `src/routes/index.tsx`, migrations |
 | Any pinned entry readable by anyone, including personal score | Medium | Verified (policy `is_shared = true OR is_pinned = true`) | Users may pin privately, not expecting scores/progress to be public | Only expose pinned rows via an explicit "public" flag, or document that pin = public | `watchlist_entries` policies |
 | Avatar objects readable by anyone who knows the path | Low | Verified (`Avatar read all` policy on `storage.objects`) | Bucket is private but the SELECT policy is unconditional for that bucket | Acceptable for profile pictures; no change needed unless avatars should be private | migration 4 |
 | No upload MIME/size validation server-side | Low | Verified (checks are client-side) | User can upload a large or non-image file | Set bucket size/MIME restrictions | avatars bucket |
-| Email confirmation / anonymous-signup settings | Unknown | **Not verified** — cannot read the auth provider settings from code | Auto-confirm plus synthetic emails means account creation is fully unattended | Confirm settings, keep anonymous sign-ins disabled | auth config |
+| Anonymous sign-ins must stay disabled | Low | Not verified from code | Emails are intentionally not used (synthetic `@otaku.local` addresses, no verification, no user data logged) — so account creation is unattended by design; the only setting that matters is that anonymous sign-ins stay off | Confirm anonymous sign-ins are disabled; no email confirmation work needed | auth config |
 
 ## 3. Top 5 fixes before launch
 
 1. Lock down `fetchAnimeCached`: require an authenticated caller, tighten the allowlist (normalize + length-limit the search term, reject unusual characters), and add a per-user call throttle.
 2. Bound the cache: cap `anime_cache` growth (row limit or age-based cleanup) so a flood cannot fill the database.
-3. Add login/signup throttling and backoff so guessing against known usernames is slow.
+3. Add login/signup throttling and backoff so guessing against known usernames is slow, and turn on the leaked-password check at signup — with no email recovery, the password is the only line of defence.
 4. Decide and enforce the public/private boundary: either keep the shared feed public (and say so) or remove `anon` read grants and make pinned-implies-public explicit in the UI.
 5. Restrict the avatars bucket to image MIME types and a size cap at the storage level, not just in the browser.
 
