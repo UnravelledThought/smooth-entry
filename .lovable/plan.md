@@ -19,7 +19,7 @@ Recommendation: fix the cache endpoint and add basic abuse limits before launch;
 | Any pinned entry readable by anyone, including personal score | Medium | Verified (policy `is_shared = true OR is_pinned = true`) | Users may pin privately, not expecting scores/progress to be public | Only expose pinned rows via an explicit "public" flag, or document that pin = public | `watchlist_entries` policies |
 | Avatar objects readable by anyone who knows the path | Low | Verified (`Avatar read all` policy on `storage.objects`) | Bucket is private but the SELECT policy is unconditional for that bucket | Acceptable for profile pictures; no change needed unless avatars should be private | migration 4 |
 | No upload MIME/size validation server-side | Low | Verified (checks are client-side) | User can upload a large or non-image file | Set bucket size/MIME restrictions | avatars bucket |
-| Email confirmation / anonymous-signup settings | Unknown | **Not verified** — cannot read the auth provider settings from code | Auto-confirm plus synthetic emails means account creation is fully unattended | Confirm settings, keep anonymous sign-ins disabled | auth config |
+| Anonymous sign-ins must stay disabled | Low | Not verified from code | Emails are intentionally not used (synthetic `@otaku.local` addresses, no verification, no user data logged) — so account creation is unattended by design; the only setting that matters is that anonymous sign-ins stay off | Confirm anonymous sign-ins are disabled; no email confirmation work needed | auth config |
 
 ## 3. Top 5 fixes before launch
 
