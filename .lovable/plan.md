@@ -25,7 +25,7 @@ Recommendation: fix the cache endpoint and add basic abuse limits before launch;
 
 1. Lock down `fetchAnimeCached`: require an authenticated caller, tighten the allowlist (normalize + length-limit the search term, reject unusual characters), and add a per-user call throttle.
 2. Bound the cache: cap `anime_cache` growth (row limit or age-based cleanup) so a flood cannot fill the database.
-3. Add login/signup throttling and backoff so guessing against known usernames is slow.
+3. Add login/signup throttling and backoff so guessing against known usernames is slow, and turn on the leaked-password check at signup — with no email recovery, the password is the only line of defence.
 4. Decide and enforce the public/private boundary: either keep the shared feed public (and say so) or remove `anon` read grants and make pinned-implies-public explicit in the UI.
 5. Restrict the avatars bucket to image MIME types and a size cap at the storage level, not just in the browser.
 
