@@ -83,6 +83,32 @@ export function useAuth() {
   return useContext(Ctx);
 }
 
+// Client-side guessing brake. Not a server rate limit — it just makes casual
+// password guessing through the UI slow, since there is no email recovery path
+// and the password is the only credential.
+const FREE_ATTEMPTS = 5;
+const attempts = new Map<string, { count: number; blockedUntil: number }>();
+
+function cooldownMs(count: number) {
+  return Math.min(2 ** (count - FREE_ATTEMPTS) * 1000, 60_000);
+}
+
+function assertNotThrottled(key: string) {
+  const rec = attempts.get(key);
+  if (!rec) return;
+  const wait = rec.blockedUntil - Date.now();
+  if (wait > 0) {
+    throw new Error(`Too many attempts. Try again in ${Math.ceil(wait / 1000)}s.`);
+  }
+}
+
+function recordFailure(key: string) {
+  const rec = attempts.get(key) ?? { count: 0, blockedUntil: 0 };
+  rec.count += 1;
+  if (rec.count > FREE_ATTEMPTS) rec.blockedUntil = Date.now() + cooldownMs(rec.count);
+  attempts.set(key, rec);
+}
+
 export async function signUpWithUsername(username: string, password: string) {
   // Check uniqueness up front for friendlier errors
   const { data: existing } = await supabase
@@ -92,23 +118,27 @@ export async function signUpWithUsername(username: string, password: string) {
     .maybeSingle();
   if (existing) throw new Error("That username is taken.");
 
+  // No email is ever sent or collected — the address is a synthetic internal id.
   const { error } = await supabase.auth.signUp({
     email: usernameToEmail(username),
     password,
-    options: {
-      emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-      data: { username },
-    },
+    options: { data: { username } },
   });
   if (error) throw error;
 }
 
 export async function signInWithUsername(username: string, password: string) {
+  const key = username.toLowerCase();
+  assertNotThrottled(key);
   const { error } = await supabase.auth.signInWithPassword({
     email: usernameToEmail(username),
     password,
   });
-  if (error) throw new Error("Wrong username or password.");
+  if (error) {
+    recordFailure(key);
+    throw new Error("Wrong username or password.");
+  }
+  attempts.delete(key);
 }
 
 export async function signOut() {
