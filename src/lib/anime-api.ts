@@ -19,24 +19,22 @@ export interface Anime {
 // a given key, every user gets it from the DB.
 
 export async function getTopAnime(): Promise<Anime[]> {
-  const v = (await fetchAnimeCached({ data: { key: "top", path: "top/anime?limit=18" } })) as Anime[] | null;
+  const v = (await fetchAnimeCached({ data: { kind: "top" } })) as Anime[] | null;
   return v ?? [];
 }
 
 export async function getSeasonNow(): Promise<Anime[]> {
-  const v = (await fetchAnimeCached({ data: { key: "season", path: "seasons/now?limit=12" } })) as Anime[] | null;
+  const v = (await fetchAnimeCached({ data: { kind: "season" } })) as Anime[] | null;
   return v ?? [];
 }
 
 export async function searchAnime(q: string): Promise<Anime[]> {
   const query = q.trim().toLowerCase();
   if (!query) return [];
-  const v = (await fetchAnimeCached({
-    data: { key: `q:${query}`, path: `anime?q=${encodeURIComponent(query)}&limit=20&sfw=true` },
-  })) as Anime[] | null;
+  const v = (await fetchAnimeCached({ data: { kind: "search", q: query } })) as Anime[] | null;
   return v ?? [];
 }
 
 export async function getAnime(id: number): Promise<Anime | null> {
-  return (await fetchAnimeCached({ data: { key: `a:${id}`, path: `anime/${id}` } })) as Anime | null;
+  return (await fetchAnimeCached({ data: { kind: "detail", id } })) as Anime | null;
 }
