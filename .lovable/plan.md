@@ -4,7 +4,7 @@
 
 Overall risk: **Medium**. No exposed secrets, no admin surface, RLS is enabled on every table with real owner-scoped policies, and the database linter is clean. The biggest real risk is the **shared anime cache server function**: it is unauthenticated and accepts arbitrary search terms, so anyone can drive unlimited outbound API calls and unlimited writes into your `anime_cache` table (cost + storage abuse, no rate limit anywhere).
 
-Second-biggest: the login identity model. Usernames are publicly readable and the login email is a deterministic `username@otaku.local`, so every account's login identifier is guessable by design — that turns the public profile list into a target list for password guessing.
+Second-biggest: the login identity model. There are no emails by design (usernames map to synthetic `@otaku.local` addresses, no verification, no user data collected), so the password is the only secret — and usernames are publicly readable, which turns the public profile list into a target list for password guessing. The fix is throttling, not email.
 
 Recommendation: fix the cache endpoint and add basic abuse limits before launch; the rest is hardening.
 
