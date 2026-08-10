@@ -75,7 +75,8 @@ function PublicProfile() {
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+      // Extension comes from the verified MIME type, not the user's filename.
+      const ext = file.type === "image/jpeg" ? "jpg" : file.type === "image/gif" ? "gif" : "png";
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, {
         contentType: file.type,
