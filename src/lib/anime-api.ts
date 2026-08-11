@@ -21,7 +21,13 @@ export interface Anime {
 // The cache endpoint requires a signed-in caller and depends on an upstream API,
 // so both "not signed in yet" and "upstream hiccup" are normal outcomes.
 // Never let them bubble up as a route error (blank screen) — degrade instead.
-async function safeFetch(data: Parameters<typeof fetchAnimeCached>[0]["data"]) {
+type CacheReq =
+  | { kind: "top" }
+  | { kind: "season" }
+  | { kind: "detail"; id: number }
+  | { kind: "search"; q: string };
+
+async function safeFetch(data: CacheReq) {
   try {
     return (await fetchAnimeCached({ data })) as unknown;
   } catch (err) {
