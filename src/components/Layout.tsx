@@ -1,21 +1,8 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Compass, Search, LogIn, User as UserIcon, Settings as SettingsIcon, LogOut, BarChart3 } from "lucide-react";
-import { useAuth, signOut } from "@/lib/auth";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-
+import { Link, useRouterState } from "@tanstack/react-router";
+import { Bookmark, Compass, Search, Settings as SettingsIcon, BarChart3 } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { user, profile } = useAuth();
-  const navigate = useNavigate();
-
 
   const nav = [
     { to: "/" as const, label: "Discover", icon: Compass },
@@ -48,60 +35,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <div className="flex items-center gap-2">
-            {user && profile ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border text-sm font-semibold uppercase transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background"
-                    style={!profile.avatar_url ? { background: profile.accent_color, color: "#000" } : undefined}
-                    aria-label="Account menu"
-                  >
-                    {profile.avatar_url ? (
-                      <img src={profile.avatar_url} alt={profile.username} className="h-full w-full object-cover" />
-                    ) : (
-                      profile.username.slice(0, 2)
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel className="truncate">
-                    <div className="truncate">{profile.username}</div>
-                    {(profile as any).uid != null && (
-                      <div className="text-[10px] font-normal tracking-wider text-muted-foreground">#{(profile as any).uid}</div>
-                    )}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={() => navigate({ to: "/u/$slug", params: { slug: `${profile.username}.${(profile as any).uid}` } })}
-                    className="cursor-pointer"
-                  >
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    <span className="truncate">Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => navigate({ to: "/settings" })}
-                    className="cursor-pointer"
-                  >
-                    <SettingsIcon className="mr-2 h-4 w-4" /> Settings
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" /> Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link
-                to="/auth"
-                className="flex items-center gap-2 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background hover:opacity-90"
-              >
-                <LogIn className="h-3.5 w-3.5" /> Sign in
-              </Link>
-            )}
-          </div>
-
+          <Link
+            to="/settings"
+            aria-label="Settings"
+            className={`grid h-9 w-9 place-items-center rounded-full border border-border transition-colors ${
+              path === "/settings" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SettingsIcon className="h-4 w-4" />
+          </Link>
         </div>
       </header>
       <main className="flex-1">{children}</main>

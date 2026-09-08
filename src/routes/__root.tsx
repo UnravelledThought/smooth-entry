@@ -7,7 +7,6 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { AuthProvider } from "@/lib/auth";
 import { AccentApplier } from "@/components/AccentApplier";
 
 import appCss from "../styles.css?url";
@@ -74,8 +73,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AniTrack — Track every anime you watch" },
-      { name: "description", content: "Discover anime, build your watchlist, track episodes." },
+      { title: "AniTrack — Your personal anime tracker" },
+      { name: "description", content: "Discover anime, build your watchlist, track episodes — saved in your browser." },
       { property: "og:title", content: "AniTrack" },
       { property: "og:description", content: "Discover anime, build your watchlist, track episodes." },
       { property: "og:type", content: "website" },
@@ -113,10 +112,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AccentApplier />
-        <Outlet />
-      </AuthProvider>
+      <AccentApplier />
+      <Outlet />
     </QueryClientProvider>
   );
 }

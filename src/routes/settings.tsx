@@ -1,14 +1,22 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { HexColorPicker, HexColorInput } from "react-colorful";
 import { Layout } from "@/components/Layout";
-import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
-import { Palette, Download, Upload } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Palette, Download, Upload, Save, Trash2 } from "lucide-react";
+import {
+  useSettings, setAccentColor, getEntriesSnapshot, exportBackup, importBackup, clearAll,
+} from "@/lib/local-store";
 import { toMalXml, parseMalXml, importEntries } from "@/lib/mal-io";
 
 export const Route = createFileRoute("/settings")({
+  head: () => ({
+    meta: [
+      { title: "Settings — AniTrack" },
+      { name: "description", content: "Pick your accent color, back up your list, or import from MyAnimeList." },
+      { property: "og:title", content: "Settings — AniTrack" },
+      { property: "og:description", content: "Pick your accent color, back up your list, or import from MyAnimeList." },
+    ],
+  }),
   component: SettingsRoute,
 });
 
@@ -16,51 +24,50 @@ function SettingsRoute() { return <Layout><Settings /></Layout>; }
 
 const PRESETS = ["#ff2d6f", "#ffffff", "#00e5ff", "#ffd400", "#9eff00", "#ff8a00", "#b388ff", "#ff5252"];
 
+function download(name: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function Settings() {
-  const { user, profile, refreshProfile, loading } = useAuth();
-  const [color, setColor] = useState("#ff2d6f");
+  const settings = useSettings();
+  const [color, setColor] = useState(settings.accent_color);
   const [showCustom, setShowCustom] = useState(false);
-  const initialized = useRef(false);
   const saveTimer = useRef<number | null>(null);
+  const synced = useRef(false);
 
   useEffect(() => {
-    if (profile && !initialized.current) {
-      setColor(profile.accent_color);
-      initialized.current = true;
+    if (!synced.current) {
+      setColor(settings.accent_color);
+      synced.current = true;
     }
-  }, [profile]);
+  }, [settings.accent_color]);
 
   // Live preview
   useEffect(() => {
     document.documentElement.style.setProperty("--accent-color", color);
   }, [color]);
 
-  // Auto-save (debounced) when color changes
+  // Debounced save
   useEffect(() => {
-    if (!user || !initialized.current) return;
-    if (profile && color === profile.accent_color) return;
+    if (!synced.current || color === settings.accent_color) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(async () => {
-      await supabase.from("profiles").update({ accent_color: color }).eq("id", user.id);
-      await refreshProfile();
-    }, 400);
+    saveTimer.current = window.setTimeout(() => setAccentColor(color), 300);
     return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
-  }, [color, user, profile, refreshProfile]);
-
-  if (loading) return <div className="px-5 py-12 text-sm text-muted-foreground">Loading…</div>;
-  if (!user || !profile) {
-    return (
-      <div className="mx-auto max-w-md px-5 py-24 text-center">
-        <p className="text-sm text-muted-foreground">You need an account for this.</p>
-        <Link to="/auth" className="mt-4 inline-block accent-bg rounded-lg px-5 py-2.5 text-sm font-medium">Sign in</Link>
-      </div>
-    );
-  }
+  }, [color, settings.accent_color]);
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 sm:py-12 space-y-10">
       <div>
         <h1 className="font-display text-3xl sm:text-4xl font-bold">Settings</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Everything you track is stored in this browser only.
+        </p>
       </div>
 
       <section className="space-y-4">
@@ -107,83 +114,114 @@ function Settings() {
         )}
       </section>
 
-      <ImportExport userId={user.id} />
+      <BackupSection />
     </div>
   );
 }
 
-function ImportExport({ userId }: { userId: string }) {
-  const qc = useQueryClient();
-  const [busy, setBusy] = useState(false);
+function BackupSection() {
   const [msg, setMsg] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const xmlRef = useRef<HTMLInputElement>(null);
+  const jsonRef = useRef<HTMLInputElement>(null);
 
-  const doExport = async () => {
-    setBusy(true); setMsg(null);
-    try {
-      const { data } = await supabase.from("watchlist_entries").select("*").eq("user_id", userId);
-      const xml = toMalXml((data ?? []) as any);
-      const blob = new Blob([xml], { type: "application/xml" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `anitrack-export-${new Date().toISOString().slice(0, 10)}.xml`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setMsg(`Exported ${data?.length ?? 0} entries.`);
-    } catch (e: any) {
-      setMsg(`Export failed: ${e.message}`);
-    } finally { setBusy(false); }
+  const exportXml = () => {
+    const entries = getEntriesSnapshot();
+    download(`anitrack-export-${new Date().toISOString().slice(0, 10)}.xml`, toMalXml(entries), "application/xml");
+    setMsg(`Exported ${entries.length} entries as MyAnimeList XML.`);
   };
 
-  const doImport = async (file: File) => {
-    setBusy(true); setMsg(null);
+  const exportJson = () => {
+    download(`anitrack-backup-${new Date().toISOString().slice(0, 10)}.json`, exportBackup(), "application/json");
+    setMsg("Backup file saved.");
+  };
+
+  const importXml = async (file: File) => {
     try {
-      const text = await file.text();
-      const parsed = parseMalXml(text);
+      const parsed = parseMalXml(await file.text());
       if (parsed.length === 0) throw new Error("No entries found in file.");
-      const res = await importEntries(userId, parsed);
+      const res = importEntries(parsed);
       setMsg(`Imported ${res.imported} new · skipped ${res.skipped} duplicates.`);
-      qc.invalidateQueries({ queryKey: ["entries", userId] });
     } catch (e: any) {
       setMsg(`Import failed: ${e.message}`);
     } finally {
-      setBusy(false);
-      if (fileRef.current) fileRef.current.value = "";
+      if (xmlRef.current) xmlRef.current.value = "";
     }
+  };
+
+  const importJson = async (file: File) => {
+    try {
+      const n = importBackup(await file.text());
+      setMsg(`Restored ${n} entries from backup.`);
+    } catch (e: any) {
+      setMsg(`Restore failed: ${e.message}`);
+    } finally {
+      if (jsonRef.current) jsonRef.current.value = "";
+    }
+  };
+
+  const wipe = () => {
+    if (!confirm("Delete your entire list and settings from this browser?")) return;
+    clearAll();
+    setMsg("All local data cleared.");
   };
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Import / Export</h2>
+      <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Backup &amp; transfer</h2>
       <div className="rounded-lg border border-border bg-surface p-5 space-y-4">
         <p className="text-sm text-muted-foreground">
-          Compatible with MyAnimeList XML export. Bring your history in or take it with you.
+          Save a backup file to move your list to another browser, or bring in a MyAnimeList export.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={doExport}
-            disabled={busy}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background disabled:opacity-50"
+            onClick={exportJson}
+            className="inline-flex items-center gap-2 rounded-full accent-bg px-4 py-2 text-sm font-medium"
           >
-            <Download className="h-3.5 w-3.5" /> Export XML
+            <Save className="h-3.5 w-3.5" /> Export backup
           </button>
           <button
-            onClick={() => fileRef.current?.click()}
-            disabled={busy}
-            className="inline-flex items-center gap-2 rounded-full accent-bg px-4 py-2 text-sm font-medium disabled:opacity-50"
+            onClick={() => jsonRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
+          >
+            <Upload className="h-3.5 w-3.5" /> Restore backup
+          </button>
+          <button
+            onClick={exportXml}
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
+          >
+            <Download className="h-3.5 w-3.5" /> Export MAL XML
+          </button>
+          <button
+            onClick={() => xmlRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
           >
             <Upload className="h-3.5 w-3.5" /> Import MAL XML
           </button>
           <input
-            ref={fileRef}
+            ref={xmlRef}
             type="file"
             accept=".xml,application/xml,text/xml"
             className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) doImport(f); }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) importXml(f); }}
+          />
+          <input
+            ref={jsonRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); }}
           />
         </div>
         {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-5">
+        <button
+          onClick={wipe}
+          className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-destructive hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> Clear all data
+        </button>
       </div>
     </section>
   );

@@ -1,5 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import type { CloudEntry, WatchStatus } from "./cloud-watchlist";
+import { addManyEntries, type LocalEntry, type WatchStatus } from "./local-store";
 
 // MyAnimeList XML export format compatibility.
 // Reference: https://myanimelist.net/panel.php?go=export
@@ -30,7 +29,7 @@ function esc(s: string | number | null | undefined) {
   return String(s ?? "").replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c] as string));
 }
 
-export function toMalXml(entries: CloudEntry[]): string {
+export function toMalXml(entries: LocalEntry[]): string {
   const completed = entries.filter((e) => e.status === "completed").length;
   const watching = entries.filter((e) => e.status === "watching").length;
   const plan = entries.filter((e) => e.status === "plan").length;
@@ -101,29 +100,18 @@ export function parseMalXml(xml: string): ParsedEntry[] {
   return out;
 }
 
-export async function importEntries(userId: string, parsed: ParsedEntry[]): Promise<{ imported: number; skipped: number }> {
+export function importEntries(parsed: ParsedEntry[]): { imported: number; skipped: number } {
   if (parsed.length === 0) return { imported: 0, skipped: 0 };
-  const ids = parsed.map((p) => p.mal_id);
-  const { data: existing } = await supabase
-    .from("watchlist_entries")
-    .select("mal_id")
-    .eq("user_id", userId)
-    .in("mal_id", ids);
-  const existingIds = new Set((existing ?? []).map((r: any) => r.mal_id));
-  const rows = parsed
-    .filter((p) => !existingIds.has(p.mal_id))
-    .map((p) => ({
-      user_id: userId,
+  return addManyEntries(
+    parsed.map((p) => ({
       mal_id: p.mal_id,
       title: p.title,
       image_url: `https://cdn.myanimelist.net/images/anime/1/${p.mal_id}.jpg`,
       episodes: p.episodes,
       progress: p.progress,
       personal_score: p.personal_score,
+      mal_score: null,
       status: p.status,
-    }));
-  if (rows.length === 0) return { imported: 0, skipped: parsed.length };
-  const { error } = await supabase.from("watchlist_entries").insert(rows);
-  if (error) throw error;
-  return { imported: rows.length, skipped: parsed.length - rows.length };
+    })),
+  );
 }

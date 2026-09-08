@@ -2,11 +2,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { getAnime } from "@/lib/anime-api";
-import { useAuth } from "@/lib/auth";
-import { useAddEntry, useDeleteEntry, useMyEntryFor } from "@/lib/cloud-watchlist";
-import { ArrowLeft, BookmarkCheck, Plus, Star } from "lucide-react";
+import { useEntryFor, addEntry, deleteEntry, toggleFavorite } from "@/lib/local-store";
+import { ArrowLeft, BookmarkCheck, Heart, Plus, Star } from "lucide-react";
 
-export const Route = createFileRoute("/anime/$id")({ component: AnimeRoute });
+export const Route = createFileRoute("/anime/$id")({
+  head: () => ({
+    meta: [
+      { title: "Anime details — AniTrack" },
+      { name: "description", content: "Score, episode count, genres and synopsis — add it to your list in one tap." },
+      { property: "og:title", content: "Anime details — AniTrack" },
+      { property: "og:description", content: "Score, episode count, genres and synopsis — add it to your list in one tap." },
+    ],
+  }),
+  component: AnimeRoute,
+});
 
 function AnimeRoute() { return <Layout><AnimeDetail /></Layout>; }
 
@@ -16,16 +25,12 @@ function AnimeDetail() {
   const { data: anime, isLoading } = useQuery({
     queryKey: ["anime", numId],
     queryFn: () => getAnime(numId),
+    staleTime: 1000 * 60 * 60 * 24,
   });
-  const { user } = useAuth();
-  const entry = useMyEntryFor(numId);
-  const add = useAddEntry();
-  const del = useDeleteEntry();
+  const entry = useEntryFor(numId);
 
   if (isLoading) return <div className="mx-auto max-w-5xl px-5 py-12"><div className="h-96 animate-pulse rounded-xl border border-border bg-surface" /></div>;
   if (!anime) return <div className="mx-auto max-w-5xl px-5 py-12">Not found.</div>;
-
-  const inList = !!entry.data;
 
   return (
     <article>
@@ -76,22 +81,28 @@ function AnimeDetail() {
             )}
 
             <div className="mt-7 flex flex-wrap gap-3">
-              {!user ? (
-                <Link to="/auth" className="accent-bg inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold">
-                  <Plus className="h-4 w-4" /> Sign in to track
-                </Link>
-              ) : inList ? (
-                <button
-                  onClick={() => entry.data && del.mutate(entry.data.id)}
-                  className="inline-flex items-center gap-2 rounded-full border border-foreground px-5 py-2.5 text-sm font-semibold"
-                >
-                  <BookmarkCheck className="h-4 w-4" /> In your list
-                </button>
+              {entry ? (
+                <>
+                  <button
+                    onClick={() => deleteEntry(entry.id)}
+                    className="inline-flex items-center gap-2 rounded-full border border-foreground px-5 py-2.5 text-sm font-semibold"
+                  >
+                    <BookmarkCheck className="h-4 w-4" /> In your list
+                  </button>
+                  <button
+                    onClick={() => toggleFavorite(entry.id)}
+                    className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold ${
+                      entry.is_favorite ? "accent-bg" : "border border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Heart className={`h-4 w-4 ${entry.is_favorite ? "fill-current" : ""}`} />
+                    {entry.is_favorite ? "Favorite" : "Favorite"}
+                  </button>
+                </>
               ) : (
                 <button
-                  onClick={() => add.mutate({ anime })}
-                  disabled={add.isPending}
-                  className="accent-bg inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all hover:gap-3 disabled:opacity-50"
+                  onClick={() => addEntry(anime)}
+                  className="accent-bg inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all hover:gap-3"
                 >
                   <Plus className="h-4 w-4" /> Add to list
                 </button>
