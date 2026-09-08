@@ -1,17 +1,24 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Bookmark, Minus, Plus, Trash2, Star, Share2, Pin, PinOff, Search as SearchIcon, X } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { Bookmark, Minus, Plus, Trash2, Star, Heart, Search as SearchIcon, X } from "lucide-react";
 import {
-  useMyEntries, useUpdateEntry, useDeleteEntry,
-  type WatchStatus, type CloudEntry,
-} from "@/lib/cloud-watchlist";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+  useEntries, updateEntry, deleteEntry, toggleFavorite, bulkSetStatus, bulkDelete,
+  type WatchStatus, type LocalEntry,
+} from "@/lib/local-store";
 
-export const Route = createFileRoute("/list")({ component: ListRoute });
+export const Route = createFileRoute("/list")({
+  head: () => ({
+    meta: [
+      { title: "My list — AniTrack" },
+      { name: "description", content: "Your anime watchlist with episode progress and personal ratings." },
+      { property: "og:title", content: "My list — AniTrack" },
+      { property: "og:description", content: "Your anime watchlist with episode progress and personal ratings." },
+    ],
+  }),
+  component: ListRoute,
+});
 
 function ListRoute() { return <Layout><ListPage /></Layout>; }
 
@@ -32,24 +39,15 @@ const SORTS: { key: SortKey; label: string }[] = [
 ];
 
 function ListPage() {
-  const { user, loading } = useAuth();
-  const q = useMyEntries();
-  const navigate = useNavigate();
-  const qc = useQueryClient();
+  const list = useEntries();
 
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("updated");
   const [selection, setSelection] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth", replace: true });
-  }, [loading, user, navigate]);
-
-  const list = q.data ?? [];
-
   const filtered = useMemo(() => {
     const qs = query.trim().toLowerCase();
-    let out = qs ? list.filter((e) => e.title.toLowerCase().includes(qs)) : list.slice();
+    const out = qs ? list.filter((e) => e.title.toLowerCase().includes(qs)) : list.slice();
     out.sort((a, b) => {
       switch (sort) {
         case "title": return a.title.localeCompare(b.title);
@@ -61,9 +59,6 @@ function ListPage() {
     });
     return out;
   }, [list, query, sort]);
-
-  if (loading || !user) return <div className="px-5 py-12 text-sm text-muted-foreground">Redirecting to sign in…</div>;
-  if (q.isLoading) return <div className="px-5 py-12 text-sm text-muted-foreground">Loading your list…</div>;
 
   if (list.length === 0) {
     return (
@@ -79,23 +74,23 @@ function ListPage() {
   }
 
   const toggleSel = (id: string) => setSelection((s) => {
-    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+    const n = new Set(s);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
   });
   const clearSel = () => setSelection(new Set());
 
-  const bulkStatus = async (status: WatchStatus) => {
+  const doBulkStatus = (status: WatchStatus) => {
     const ids = Array.from(selection);
     if (ids.length === 0) return;
-    await supabase.from("watchlist_entries").update({ status }).in("id", ids);
-    qc.invalidateQueries({ queryKey: ["entries", user.id] });
+    bulkSetStatus(ids, status);
     clearSel();
   };
-  const bulkDelete = async () => {
+  const doBulkDelete = () => {
     const ids = Array.from(selection);
     if (ids.length === 0) return;
     if (!confirm(`Delete ${ids.length} entries?`)) return;
-    await supabase.from("watchlist_entries").delete().in("id", ids);
-    qc.invalidateQueries({ queryKey: ["entries", user.id] });
+    bulkDelete(ids);
     clearSel();
   };
 
@@ -175,13 +170,13 @@ function ListPage() {
           {STATUSES.map((s) => (
             <button
               key={s.key}
-              onClick={() => bulkStatus(s.key)}
+              onClick={() => doBulkStatus(s.key)}
               className="rounded-full border border-border px-2.5 py-1 text-xs hover:bg-foreground hover:text-background"
             >
               {s.label}
             </button>
           ))}
-          <button onClick={bulkDelete} className="rounded-full border border-border px-2.5 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground">
+          <button onClick={doBulkDelete} className="rounded-full border border-border px-2.5 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground">
             Delete
           </button>
           <button onClick={clearSel} className="ml-1 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:text-foreground">
@@ -193,9 +188,7 @@ function ListPage() {
   );
 }
 
-function EntryCard({ entry, selected, onToggleSelect }: { entry: CloudEntry; selected: boolean; onToggleSelect: () => void }) {
-  const update = useUpdateEntry();
-  const del = useDeleteEntry();
+function EntryCard({ entry, selected, onToggleSelect }: { entry: LocalEntry; selected: boolean; onToggleSelect: () => void }) {
   const pct = entry.episodes ? Math.min(100, (entry.progress / entry.episodes) * 100) : 0;
 
   return (
@@ -204,7 +197,7 @@ function EntryCard({ entry, selected, onToggleSelect }: { entry: CloudEntry; sel
         <input type="checkbox" checked={selected} onChange={onToggleSelect} className="accent-primary" />
       </label>
       <button
-        onClick={() => del.mutate(entry.id)}
+        onClick={() => deleteEntry(entry.id)}
         className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-background/80 opacity-0 backdrop-blur transition-opacity hover:bg-background group-hover:opacity-100"
         aria-label="Remove"
       >
@@ -233,7 +226,7 @@ function EntryCard({ entry, selected, onToggleSelect }: { entry: CloudEntry; sel
           </div>
           <select
             value={entry.status}
-            onChange={(e) => update.mutate({ id: entry.id, patch: { status: e.target.value as WatchStatus } })}
+            onChange={(e) => updateEntry(entry.id, { status: e.target.value as WatchStatus })}
             className="mt-2 rounded border border-border bg-background px-2 py-1 text-xs outline-none"
           >
             {STATUSES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
@@ -249,7 +242,7 @@ function EntryCard({ entry, selected, onToggleSelect }: { entry: CloudEntry; sel
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => update.mutate({ id: entry.id, patch: { progress: Math.max(0, entry.progress - 1) } })}
+              onClick={() => updateEntry(entry.id, { progress: Math.max(0, entry.progress - 1) })}
               className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border hover:bg-foreground hover:text-background"
             ><Minus className="h-3 w-3" /></button>
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-border">
@@ -259,10 +252,10 @@ function EntryCard({ entry, selected, onToggleSelect }: { entry: CloudEntry; sel
               onClick={() => {
                 const next = entry.progress + 1;
                 const completed = entry.episodes && next >= entry.episodes;
-                update.mutate({ id: entry.id, patch: {
+                updateEntry(entry.id, {
                   progress: entry.episodes ? Math.min(entry.episodes, next) : next,
                   status: completed ? "completed" : entry.status,
-                }});
+                });
               }}
               className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border hover:bg-foreground hover:text-background"
             ><Plus className="h-3 w-3" /></button>
@@ -277,31 +270,20 @@ function EntryCard({ entry, selected, onToggleSelect }: { entry: CloudEntry; sel
           <input
             type="range" min={0} max={10} step={0.1}
             value={entry.personal_score ?? 0}
-            onChange={(e) => update.mutate({ id: entry.id, patch: { personal_score: parseFloat(e.target.value) } })}
+            onChange={(e) => updateEntry(entry.id, { personal_score: parseFloat(e.target.value) })}
             className="w-full accent-primary"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 pt-1">
+        <div className="pt-1">
           <button
-            onClick={() => update.mutate({ id: entry.id, patch: {
-              is_shared: !entry.is_shared,
-              shared_at: entry.is_shared ? null : new Date().toISOString(),
-            }})}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-              entry.is_shared ? "accent-bg" : "border border-border text-muted-foreground hover:text-foreground"
+            onClick={() => toggleFavorite(entry.id)}
+            className={`flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+              entry.is_favorite ? "accent-bg" : "border border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Share2 className="h-3 w-3" /> {entry.is_shared ? "Shared" : "Share"}
-          </button>
-          <button
-            onClick={() => update.mutate({ id: entry.id, patch: { is_pinned: !entry.is_pinned } })}
-            className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-              entry.is_pinned ? "accent-bg" : "border border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {entry.is_pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
-            {entry.is_pinned ? "Pinned" : "Pin"}
+            <Heart className={`h-3 w-3 ${entry.is_favorite ? "fill-current" : ""}`} />
+            {entry.is_favorite ? "Favorite" : "Add to favorites"}
           </button>
         </div>
       </div>

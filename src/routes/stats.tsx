@@ -1,29 +1,29 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { Layout } from "@/components/Layout";
-import { useAuth } from "@/lib/auth";
-import { useMyEntries, type CloudEntry } from "@/lib/cloud-watchlist";
+import { useEntries, type LocalEntry } from "@/lib/local-store";
 import { BarChart3, Clock, Film, Star, Trophy, Tv } from "lucide-react";
 
-export const Route = createFileRoute("/stats")({ component: () => <Layout><StatsPage /></Layout> });
+export const Route = createFileRoute("/stats")({
+  head: () => ({
+    meta: [
+      { title: "Stats — AniTrack" },
+      { name: "description", content: "Episodes watched, hours spent, score distribution and top rated shows." },
+      { property: "og:title", content: "Stats — AniTrack" },
+      { property: "og:description", content: "Episodes watched, hours spent, score distribution and top rated shows." },
+    ],
+  }),
+  component: StatsRoute,
+});
+
+function StatsRoute() { return <Layout><StatsPage /></Layout>; }
 
 const AVG_EP_MIN = 24;
 
 function StatsPage() {
-  const { user, loading } = useAuth();
-  const q = useMyEntries();
-  const navigate = useNavigate();
+  const list = useEntries();
+  const stats = useMemo(() => compute(list), [list]);
 
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth", replace: true });
-  }, [loading, user, navigate]);
-
-  const stats = useMemo(() => compute(q.data ?? []), [q.data]);
-
-  if (loading || !user) return <div className="px-5 py-12 text-sm text-muted-foreground">…</div>;
-  if (q.isLoading) return <div className="px-5 py-12 text-sm text-muted-foreground">Crunching numbers…</div>;
-
-  const list = q.data ?? [];
   if (list.length === 0) {
     return (
       <div className="mx-auto max-w-md px-5 py-24 text-center">
@@ -137,7 +137,7 @@ function MiniStat({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
-function compute(list: CloudEntry[]) {
+function compute(list: LocalEntry[]) {
   const total = list.length;
   const episodes = list.reduce((s, e) => s + (e.progress || 0), 0);
   const minutes = episodes * AVG_EP_MIN;
@@ -164,7 +164,7 @@ function compute(list: CloudEntry[]) {
 
   const scoreBuckets = Array.from({ length: 10 }, () => 0);
   for (const e of rated) {
-    const idx = Math.min(9, Math.max(0, Math.ceil((e.personal_score ?? 0)) - 1));
+    const idx = Math.min(9, Math.max(0, Math.ceil(e.personal_score ?? 0) - 1));
     scoreBuckets[idx]++;
   }
 

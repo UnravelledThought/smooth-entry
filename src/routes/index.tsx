@@ -1,32 +1,28 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
 import { getTopAnime, getSeasonNow } from "@/lib/anime-api";
-import { useSharedFeed } from "@/lib/cloud-watchlist";
-import { useAuth } from "@/lib/auth";
-import { ArrowRight, Share2 } from "lucide-react";
+import { useFavorites } from "@/lib/local-store";
+import { ArrowRight, Heart } from "lucide-react";
 
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "AniTrack — Discover and track anime" },
+      { name: "description", content: "Browse this season's anime and all-time favourites, then track what you watch." },
+      { property: "og:title", content: "AniTrack — Discover and track anime" },
+      { property: "og:description", content: "Browse this season's anime and all-time favourites, then track what you watch." },
+    ],
+  }),
+  component: Home,
+});
 
 function Home() { return <Layout><Index /></Layout>; }
 
 function Index() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth", replace: true });
-  }, [loading, user, navigate]);
-
-  const enabled = !!user;
-  const top = useQuery({ queryKey: ["top"], queryFn: getTopAnime, enabled });
-  const season = useQuery({ queryKey: ["season"], queryFn: getSeasonNow, enabled });
-
-  if (loading || !user) {
-    return <div className="px-5 py-12 text-sm text-muted-foreground">Redirecting…</div>;
-  }
+  const top = useQuery({ queryKey: ["top"], queryFn: getTopAnime, staleTime: 1000 * 60 * 60 * 24 });
+  const season = useQuery({ queryKey: ["season"], queryFn: getSeasonNow, staleTime: 1000 * 60 * 60 * 24 });
 
   return (
     <>
@@ -45,7 +41,7 @@ function Index() {
         </div>
       </section>
 
-      <SharedFeed />
+      <FavoritesStrip />
 
       <Row title="Airing this season" loading={season.isLoading} items={season.data?.slice(0, 12)} />
       <Row title="All-time top" loading={top.isLoading} items={top.data?.slice(0, 12)} />
@@ -53,53 +49,38 @@ function Index() {
   );
 }
 
-function SharedFeed() {
-  const feed = useSharedFeed(12);
+function FavoritesStrip() {
+  const favorites = useFavorites();
+  if (favorites.length === 0) return null;
+
   return (
     <section className="mx-auto max-w-6xl px-5 py-10">
-      <div className="mb-5 flex items-end justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            <Share2 className="h-3 w-3" /> Shared
-          </div>
-          <h2 className="mt-1 font-display text-xl font-semibold">Recently shared</h2>
+      <div className="mb-5">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          <Heart className="h-3 w-3" /> Favorites
         </div>
+        <h2 className="mt-1 font-display text-xl font-semibold">Your top picks</h2>
       </div>
-      {feed.isLoading ? (
-        <div className="flex gap-3 overflow-hidden">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-32 w-56 shrink-0 animate-pulse rounded-xl border border-border bg-surface" />
-          ))}
-        </div>
-      ) : feed.data && feed.data.length > 0 ? (
-        <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
-          {feed.data.map((e) => (
-            <div key={e.id} className="flex w-64 shrink-0 gap-3 rounded-xl border border-border bg-surface p-3">
-              <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="shrink-0">
-                <img src={e.image_url} alt="" className="h-24 w-16 rounded object-cover" />
+      <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+        {favorites.map((e) => (
+          <div key={e.id} className="flex w-64 shrink-0 gap-3 rounded-xl border border-border bg-surface p-3">
+            <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="shrink-0">
+              <img src={e.image_url} alt="" className="h-24 w-16 rounded object-cover" />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="line-clamp-2 text-sm font-semibold leading-tight hover:accent-text">
+                {e.title}
               </Link>
-              <div className="min-w-0 flex-1">
-                <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="line-clamp-2 text-sm font-semibold leading-tight hover:accent-text">
-                  {e.title}
-                </Link>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  shared by{" "}
-                  {e.profile?.username ? (
-                    <Link to="/u/$slug" params={{ slug: `${e.profile.username}.${e.profile.uid}` }} className="hover:accent-text">
-                      {e.profile.username}
-                    </Link>
-                  ) : "someone"}
-                </p>
-                <p className="mt-1 text-xs"><span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">{e.status}</span></p>
-              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {e.progress}/{e.episodes ?? "?"} episodes
+              </p>
+              <p className="mt-1 text-xs">
+                <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">{e.status}</span>
+              </p>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          No shares yet — be the first to share something from your list.
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
