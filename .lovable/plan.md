@@ -1,19 +1,46 @@
-# Fix anime search (data source is down)
+# AniList + Jikan data layer
 
-## What's wrong
+## Why this is needed now
 
-Search isn't broken in your site's code — the MyAnimeList data service AniTrack uses (Jikan) is currently failing every request with a gateway timeout: "Jikan failed to connect to MyAnimeList." Trending and seasonal rows on the home page fail for the same reason. Verified just now: every request to it times out, from the preview and from a direct test.
+Search, trending and seasonal are all failing right now. Confirmed: the MyAnimeList service AniTrack uses (Jikan) returns a gateway timeout on every request — "Jikan failed to connect to MyAnimeList". The site's own code is fine; the source is down. AniList, tested just now, works.
 
-Also, when a fetch fails the page just shows "No results", so it looks like the anime doesn't exist instead of telling you the service is unavailable.
+So the fix and your spec are the same job: AniList becomes the main source, Jikan becomes an extra that can fail without breaking the site.
 
-## The fix
+## What you'll get
 
-1. Switch the primary anime source to AniList, which is up and returns the same information (title, English title, cover art, score, episodes, year, status, synopsis, genres, type) and includes the MyAnimeList ID, so your existing list entries and links keep working unchanged.
-2. Keep MyAnimeList/Jikan as an automatic fallback, so if AniList ever has an outage the site tries the other source instead of failing.
-3. Show a clear message when both sources are unreachable ("Anime data is temporarily unavailable — try again in a moment") with a retry button, separate from the genuine "no results" message.
-4. Don't cache failures. Only successful responses go into the browser cache, so a temporary outage doesn't stick around for 30 days.
+- Search, trending, seasonal and anime pages work again, powered by AniList.
+- Richer anime pages: Japanese title, banner image, studios, tags, characters with voice actors, staff, sequels/prequels, streaming links, airing countdown, and both scores side by side (AniList score and MyAnimeList score, never mixed together).
+- Episode lists with episode titles, Japanese titles, air dates, episode scores, and filler/recap markers — from MyAnimeList.
+- When MyAnimeList is down, the anime page still loads fully; only the MAL score and episode list show as temporarily unavailable, with a retry.
+- When AniList is down, anything you've viewed before still loads from the local cache.
+- Everything is cached in your browser with a "last synced" time, plus a refresh action per anime so you can pull fresh data on demand.
 
 ## Technical section
 
-- `src/lib/anime-api.ts`: add an AniList GraphQL provider (`https://graphql.anilist.co`) mapping `Media` → the existing `Anime` interface (`idMal` → `mal_id`, `coverImage.large` → `images.jpg.large_image_url`, `averageScore/10` → `score`, `seasonYear` → `year`, strip HTML from `description`). Keep the Jikan path as fallback. Fetchers become: `getTopAnime` (sort `SCORE_DESC`), `getSeasonNow` (current season/year), `searchAnime` (`search:`), `getAnime(id)` (`idMal:`). Keep the same exported signatures and the `anitrack.cache.` localStorage cache, bumped to a new prefix version so stale/empty entries are dropped; write to cache only on success.
-- Fetchers throw on total failure instead of returning `[]`/`null`, so React Query surfaces `isError`; `src/routes/search.tsx`, `src/routes/index.tsx`, and `src/routes/anime.$id.tsx` render an unavailable state with a refetch action. Detail route keeps not-found handling for a valid-but-missing ID.
+Internal model (`src/lib/anime/types.ts`)
+- `Anime`: `internal_id` (`al-<anilistId>`), `anilist_id`, `mal_id`, `titles {romaji,english,native}`, `description`, `images {cover,banner}`, `format`, `status`, `dates {start,end}`, `season`, `season_year`, `episodes`, `duration`, `genres`, `tags`, `studios`, `staff`, `characters` (with voice actors), `relations`, `recommendations`, `airing {nextEpisode,timeUntil}`, `streaming`, `anilist_score`, `popularity`, `rankings`, `mal_score`, `mal_rank`, `mal_popularity`, `mal_members`, `last_synced_at`.
+- `Episode`: `internal_id`, `anime_id`, `mal_episode_id`, `episode_number`, `title`, `title_japanese`, `air_date`, `score`, `filler`, `recap`.
+- MAL fields live in a separate optional `mal` block so an AniList refresh can never clobber them and vice versa.
+
+Clients
+- `src/lib/anime/anilist.ts`: GraphQL POST to `https://graphql.anilist.co`. Queries: `searchAnime`, `animeByAnilistId`, `trending` (`TRENDING_DESC`), `season` (current season/year). Maps `Media` → internal model, strips HTML from `description`, `averageScore/10` → `anilist_score`.
+- `src/lib/anime/jikan.ts`: REST to `https://api.jikan.moe/v4`, keyed strictly by `idMal` — `/anime/{malId}` for score/rank/popularity/members, `/anime/{malId}/episodes` (paged) for episodes. No title matching. Rate-limit aware: at most one in-flight request, small queue, single retry on 429/5xx with backoff, then give up and report unavailable.
+
+Service (`src/lib/anime/service.ts`) — the only module routes import
+- `searchAnime(query)` → AniList only.
+- `getTrending()` / `getSeasonNow()` → AniList only.
+- `getAnime(internalOrAnilistId)` → cached AniList entity, fetch if stale/missing.
+- `getMalDetails(malId)` → Jikan score block, separate query so failure is isolated.
+- `getEpisodes(animeId)` → Jikan via `mal_id`.
+- `refreshAnime(animeId)` → force re-fetch both sides, update `last_synced_at`.
+- Each returns typed results with per-source status; no cross-source fallback.
+
+Caching
+- `src/lib/anime/cache.ts`: versioned localStorage store, new prefix (`anitrack.v2.`) so the current poisoned/empty entries are dropped. Separate records per source (`anilist:<id>`, `mal:<malId>`, `episodes:<malId>`) each with `last_synced_at`. Only successful responses are stored. TTLs: metadata 7 days, MAL scores 1 day, episodes 3 days, search results 1 hour; stale data is still served while a refresh runs.
+- React Query keys mirror the service operations; long `staleTime`, no retry storms.
+
+Routes
+- `src/lib/anime-api.ts` is replaced by the service; existing imports in `index.tsx`, `search.tsx`, `anime.$id.tsx`, `list.tsx`, `stats.tsx`, `mal-io.ts` are repointed. `list.tsx`/`local-store.ts` keep storing `mal_id` so saved lists and MAL import/export stay valid; entries also gain `anilist_id` when known.
+- `anime.$id.tsx` becomes tabbed (Overview / Episodes / Characters / Related), with each panel degrading independently and a "Refresh data" button showing the last-synced time.
+- `search.tsx` and `index.tsx` distinguish "no results" from "data source unavailable — retry".
+- Route IDs stay MAL-based (`/anime/$id`) so existing links keep working; the service resolves a MAL id to the AniList entity.
