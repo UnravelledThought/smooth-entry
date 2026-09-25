@@ -5,7 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Bookmark, Minus, Plus, Trash2, Star, Heart, Search as SearchIcon, X } from "lucide-react";
 import {
   useEntries, updateEntry, deleteEntry, toggleFavorite, bulkSetStatus, bulkDelete,
-  type WatchStatus, type LocalEntry,
+  entryRouteId, type WatchStatus, type LocalEntry,
 } from "@/lib/local-store";
 
 export const Route = createFileRoute("/list")({
@@ -205,13 +205,13 @@ function EntryCard({ entry, selected, onToggleSelect }: { entry: LocalEntry; sel
       </button>
 
       <div className="flex gap-3 p-3 pl-10">
-        <Link to="/anime/$id" params={{ id: String(entry.mal_id) }} className="shrink-0">
+        <Link to="/anime/$id" params={{ id: entryRouteId(entry) }} className="shrink-0">
           <img src={entry.image_url} alt="" className="h-24 w-16 rounded-lg object-cover" />
         </Link>
         <div className="min-w-0 flex-1">
           <Link
             to="/anime/$id"
-            params={{ id: String(entry.mal_id) }}
+            params={{ id: entryRouteId(entry) }}
             className="line-clamp-2 text-sm font-semibold leading-tight hover:accent-text"
           >
             {entry.title}

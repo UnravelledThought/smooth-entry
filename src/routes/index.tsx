@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
-import { getTopAnime, getSeasonNow } from "@/lib/anime-api";
-import { useFavorites } from "@/lib/local-store";
-import { ArrowRight, Heart } from "lucide-react";
+import { getTrending, getSeasonNow } from "@/lib/anime/service";
+import type { Anime } from "@/lib/anime/types";
+import { useFavorites, entryRouteId } from "@/lib/local-store";
+import { ArrowRight, Heart, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Browse this season's anime and all-time favourites, then track what you watch." },
       { property: "og:title", content: "AniTrack — Discover and track anime" },
       { property: "og:description", content: "Browse this season's anime and all-time favourites, then track what you watch." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Home,
@@ -21,8 +24,8 @@ export const Route = createFileRoute("/")({
 function Home() { return <Layout><Index /></Layout>; }
 
 function Index() {
-  const top = useQuery({ queryKey: ["top"], queryFn: getTopAnime, staleTime: 1000 * 60 * 60 * 24 });
-  const season = useQuery({ queryKey: ["season"], queryFn: getSeasonNow, staleTime: 1000 * 60 * 60 * 24 });
+  const top = useQuery({ queryKey: ["anilist", "top"], queryFn: getTrending, staleTime: 1000 * 60 * 60 * 6, retry: 1 });
+  const season = useQuery({ queryKey: ["anilist", "season"], queryFn: getSeasonNow, staleTime: 1000 * 60 * 60 * 6, retry: 1 });
 
   return (
     <>
@@ -43,8 +46,20 @@ function Index() {
 
       <FavoritesStrip />
 
-      <Row title="Airing this season" loading={season.isLoading} items={season.data?.slice(0, 12)} />
-      <Row title="All-time top" loading={top.isLoading} items={top.data?.slice(0, 12)} />
+      <Row
+        title="Airing this season"
+        loading={season.isLoading}
+        failed={season.isError}
+        onRetry={() => season.refetch()}
+        items={season.data?.data.slice(0, 12)}
+      />
+      <Row
+        title="Highest rated"
+        loading={top.isLoading}
+        failed={top.isError}
+        onRetry={() => top.refetch()}
+        items={top.data?.data.slice(0, 12)}
+      />
     </>
   );
 }
@@ -64,11 +79,11 @@ function FavoritesStrip() {
       <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
         {favorites.map((e) => (
           <div key={e.id} className="flex w-64 shrink-0 gap-3 rounded-xl border border-border bg-surface p-3">
-            <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="shrink-0">
+            <Link to="/anime/$id" params={{ id: entryRouteId(e) }} className="shrink-0">
               <img src={e.image_url} alt="" className="h-24 w-16 rounded object-cover" />
             </Link>
             <div className="min-w-0 flex-1">
-              <Link to="/anime/$id" params={{ id: String(e.mal_id) }} className="line-clamp-2 text-sm font-semibold leading-tight hover:accent-text">
+              <Link to="/anime/$id" params={{ id: entryRouteId(e) }} className="line-clamp-2 text-sm font-semibold leading-tight hover:accent-text">
                 {e.title}
               </Link>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -85,7 +100,19 @@ function FavoritesStrip() {
   );
 }
 
-function Row({ title, loading, items }: { title: string; loading: boolean; items: Awaited<ReturnType<typeof getTopAnime>> | undefined }) {
+function Row({
+  title,
+  loading,
+  failed,
+  items,
+  onRetry,
+}: {
+  title: string;
+  loading: boolean;
+  failed: boolean;
+  items: Anime[] | undefined;
+  onRetry: () => void;
+}) {
   return (
     <section className="mx-auto max-w-6xl px-5 py-10">
       <h2 className="mb-5 font-display text-xl font-semibold">{title}</h2>
@@ -95,9 +122,16 @@ function Row({ title, loading, items }: { title: string; loading: boolean; items
             <div key={i} className="aspect-[2/3] animate-pulse rounded-xl border border-border bg-surface" />
           ))}
         </div>
+      ) : failed ? (
+        <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+          Anime data is temporarily unavailable.
+          <button onClick={onRetry} className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
+            <RefreshCw className="h-3 w-3" /> Try again
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {items?.map((a) => <AnimeCard key={a.mal_id} anime={a} />)}
+          {items?.map((a) => <AnimeCard key={a.anilist_id} anime={a} />)}
         </div>
       )}
     </section>
