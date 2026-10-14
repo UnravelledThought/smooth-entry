@@ -66,7 +66,7 @@ function ListPage() {
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-border">
           <Bookmark className="h-5 w-5" />
         </div>
-        <h1 className="mt-6 font-display text-3xl font-bold">Empty list</h1>
+        <h1 className="mt-6 font-display text-3xl font-semibold">Empty list</h1>
         <p className="mt-2 text-sm text-muted-foreground">Add shows from Discover or Search.</p>
         <Link to="/" className="mt-6 inline-block accent-bg rounded-lg px-6 py-2.5 text-sm font-semibold">Browse</Link>
       </div>
@@ -98,10 +98,10 @@ function ListPage() {
     <div className="mx-auto max-w-6xl px-5 py-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-bold">My list</h1>
+          <h1 className="font-display text-4xl font-semibold">My list</h1>
           <p className="mt-2 text-sm text-muted-foreground">{list.length} tracked · {filtered.length} shown</p>
         </div>
-        <Link to="/stats" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">View stats →</Link>
+        <Link to="/stats" className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground">View stats →</Link>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -192,7 +192,7 @@ function EntryCard({ entry, selected, onToggleSelect }: { entry: LocalEntry; sel
   const pct = entry.episodes ? Math.min(100, (entry.progress / entry.episodes) * 100) : 0;
 
   return (
-    <div className={`group relative overflow-hidden rounded-xl border bg-surface transition-colors ${selected ? "accent-border" : "border-border hover:border-foreground/40"}`}>
+    <div className={`group relative overflow-hidden rounded-md border bg-surface transition-colors ${selected ? "accent-border" : "border-border hover:border-foreground/40"}`}>
       <label className="absolute left-2 top-2 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-border bg-background/80 backdrop-blur">
         <input type="checkbox" checked={selected} onChange={onToggleSelect} className="accent-primary" />
       </label>

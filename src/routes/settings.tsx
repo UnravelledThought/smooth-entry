@@ -64,14 +64,14 @@ function Settings() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 sm:py-12 space-y-10">
       <div>
-        <h1 className="font-display text-3xl sm:text-4xl font-bold">Settings</h1>
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold">Settings</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Everything you track is stored in this browser only.
         </p>
       </div>
 
       <section className="space-y-4">
-        <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Accent color</h2>
+        <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Accent color</h2>
         <div className="flex flex-wrap items-center gap-3">
           {PRESETS.map((c) => (
             <button
@@ -97,7 +97,7 @@ function Settings() {
               <HexColorPicker color={color} onChange={setColor} style={{ width: "100%" }} />
             </div>
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">Hex</span>
+              <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Hex</span>
               <div className="flex items-center gap-2">
                 <span className="h-8 w-8 rounded border border-border" style={{ background: color }} />
                 <span className="text-sm text-muted-foreground">#</span>
@@ -167,7 +167,7 @@ function BackupSection() {
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Backup &amp; transfer</h2>
+      <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Backup &amp; transfer</h2>
       <div className="rounded-lg border border-border bg-surface p-5 space-y-4">
         <p className="text-sm text-muted-foreground">
           Save a backup file to move your list to another browser, or bring in a MyAnimeList export.

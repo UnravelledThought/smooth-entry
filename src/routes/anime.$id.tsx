@@ -75,7 +75,7 @@ function AnimeDetail() {
   };
 
   if (meta.isLoading) {
-    return <div className="mx-auto max-w-5xl px-5 py-12"><div className="h-96 animate-pulse rounded-xl border border-border bg-surface" /></div>;
+    return <div className="mx-auto max-w-5xl px-5 py-12"><div className="h-96 animate-pulse rounded-md border border-border bg-surface" /></div>;
   }
   if (meta.isError) {
     return (
@@ -118,11 +118,11 @@ function AnimeDetail() {
 
         <div className="mt-8 grid gap-10 md:grid-cols-[260px_1fr]">
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border">
+            <div className="overflow-hidden rounded-md border border-border">
               <img src={anime.images.cover} alt={displayTitle(anime)} className="w-full" />
             </div>
             {anime.streaming.length > 0 && (
-              <div className="rounded-xl border border-border p-3">
+              <div className="rounded-md border border-border p-3">
                 <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Watch on</p>
                 <div className="flex flex-wrap gap-1.5">
                   {anime.streaming.map((s) => (
@@ -145,7 +145,7 @@ function AnimeDetail() {
               {anime.duration && <span className="rounded-full border border-border px-2.5 py-1">{anime.duration} min</span>}
             </div>
 
-            <h1 className="mt-3 font-display text-4xl font-bold leading-tight md:text-5xl">{displayTitle(anime)}</h1>
+            <h1 className="mt-3 font-display text-4xl font-semibold leading-tight md:text-5xl">{displayTitle(anime)}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {[anime.titles.romaji, anime.titles.native].filter(Boolean).join(" · ")}
             </p>
@@ -292,7 +292,7 @@ function AnimeDetail() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {anime.characters.map((c) => (
-                  <div key={c.id} className="flex gap-3 rounded-xl border border-border bg-surface p-3">
+                  <div key={c.id} className="flex gap-3 rounded-md border border-border bg-surface p-3">
                     {c.image && <img src={c.image} alt="" className="h-16 w-12 rounded object-cover" />}
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{c.name}</p>
@@ -354,7 +354,7 @@ function Facts({ anime }: { anime: Anime }) {
   const top = anime.rankings.find((r) => r.all_time && r.type === "RATED");
   if (top) rows.push(["AniList rank", `#${top.rank} ${top.context}`]);
   return (
-    <div className="rounded-xl border border-border p-4">
+    <div className="rounded-md border border-border p-4">
       <p className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">AniList</p>
       <dl className="space-y-1.5 text-sm">
         {rows.map(([k, v]) => (
@@ -380,7 +380,7 @@ function MalFacts({
   onRetry: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-border p-4">
+    <div className="rounded-md border border-border p-4">
       <p className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">MyAnimeList</p>
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
@@ -434,7 +434,7 @@ function EpisodesPanel({ anime }: { anime: Anime }) {
   if (eps.data.data.length === 0) return <p className="text-sm text-muted-foreground">No episode list published yet.</p>;
 
   return (
-    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+    <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
       {eps.data.data.map((e) => (
         <div key={e.internal_id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 p-3 text-sm">
           <span className="w-8 font-mono text-xs text-muted-foreground">{e.episode_number}</span>
@@ -462,7 +462,7 @@ function RelatedCard({ cover, title, sub, routeId }: { cover: string | null; tit
       </div>
     </>
   );
-  const cls = "flex gap-3 rounded-xl border border-border bg-surface p-3";
+  const cls = "flex gap-3 rounded-md border border-border bg-surface p-3";
   if (!routeId) return <div className={cls}>{inner}</div>;
   return <Link to="/anime/$id" params={{ id: routeId }} className={`${cls} hover:border-foreground/40`}>{inner}</Link>;
 }
