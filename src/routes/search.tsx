@@ -80,7 +80,7 @@ function SearchInner() {
           <p className="text-sm text-muted-foreground">No results for "{debounced}".</p>
         )}
         {results && results.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {results.map((a) => <AnimeCard key={a.anilist_id} anime={a} />)}
           </div>
         )}

@@ -117,9 +117,9 @@ function Row({
     <section className="mx-auto max-w-6xl px-5 py-8">
       <h2 className="mb-4 font-display text-lg font-semibold">{title}</h2>
       {loading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="aspect-[2/3] animate-pulse rounded-md border border-border bg-surface" />
+            <div key={i} className="aspect-[2/3] animate-pulse rounded-md bg-surface" />
           ))}
         </div>
       ) : failed ? (
@@ -130,7 +130,7 @@ function Row({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {items?.map((a) => <AnimeCard key={a.anilist_id} anime={a} />)}
         </div>
       )}
