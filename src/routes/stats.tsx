@@ -30,7 +30,7 @@ function StatsPage() {
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-border">
           <BarChart3 className="h-5 w-5" />
         </div>
-        <h1 className="mt-6 font-display text-3xl font-bold">No stats yet</h1>
+        <h1 className="mt-6 font-display text-3xl font-semibold">No stats yet</h1>
         <p className="mt-2 text-sm text-muted-foreground">Track shows to unlock insights.</p>
         <Link to="/" className="mt-6 inline-block accent-bg rounded-lg px-6 py-2.5 text-sm font-semibold">Browse</Link>
       </div>
@@ -38,9 +38,9 @@ function StatsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12 space-y-10">
+    <div className="mx-auto max-w-6xl px-5 py-10 space-y-8">
       <div>
-        <h1 className="font-display text-4xl font-bold">Stats</h1>
+        <h1 className="font-display text-3xl font-semibold">Stats</h1>
         <p className="mt-2 text-sm text-muted-foreground">Your tracking, by the numbers.</p>
       </div>
 
@@ -51,8 +51,8 @@ function StatsPage() {
         <StatCard icon={Star} label="Mean score" value={stats.mean ? stats.mean.toFixed(2) : "—"} sub={`${stats.rated} rated`} />
       </div>
 
-      <section className="rounded-2xl border border-border bg-surface p-6">
-        <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Status breakdown</h2>
+      <section className="rounded-lg border border-border bg-surface p-6">
+        <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Status breakdown</h2>
         <div className="mt-4 space-y-3">
           {stats.statusRows.map((r) => (
             <div key={r.key}>
@@ -74,8 +74,8 @@ function StatsPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+        <div className="rounded-lg border border-border bg-surface p-6">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
             <Trophy className="h-3.5 w-3.5" /> Top rated
           </div>
           <div className="mt-4 space-y-2">
@@ -96,8 +96,8 @@ function StatsPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Score distribution</h2>
+        <div className="rounded-lg border border-border bg-surface p-6">
+          <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Score distribution</h2>
           <div className="mt-4 flex h-32 items-end gap-1">
             {stats.scoreBuckets.map((n, i) => {
               const max = Math.max(...stats.scoreBuckets, 1);
@@ -117,11 +117,11 @@ function StatsPage() {
 
 function StatCard({ icon: Icon, label, value, sub }: { icon: any; label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+    <div className="rounded-lg border border-border bg-surface p-5">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
         <Icon className="h-3.5 w-3.5" /> {label}
       </div>
-      <div className="mt-2 font-display text-3xl font-bold">{value}</div>
+      <div className="mt-2 font-display text-3xl font-semibold">{value}</div>
       {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
     </div>
   );
@@ -130,7 +130,7 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: any; label: string;
 function MiniStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
       <div className="mt-1 font-display text-xl font-semibold">{value}</div>
       {sub && <div className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</div>}
     </div>

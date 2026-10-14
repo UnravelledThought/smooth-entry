@@ -29,7 +29,7 @@ function Index() {
 
   return (
     <>
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-24">
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-16">
         <h1 className="font-display text-5xl font-semibold leading-[1] tracking-tight md:text-7xl">
           one list<br />
           <span className="text-muted-foreground">for all anime.</span>
@@ -69,7 +69,7 @@ function FavoritesStrip() {
   if (favorites.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-6xl px-5 py-10">
+    <section className="mx-auto max-w-6xl px-5 py-8">
       <div className="mb-5">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           <Heart className="h-3 w-3" /> Favorites
@@ -78,7 +78,7 @@ function FavoritesStrip() {
       </div>
       <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
         {favorites.map((e) => (
-          <div key={e.id} className="flex w-64 shrink-0 gap-3 rounded-xl border border-border bg-surface p-3">
+          <div key={e.id} className="flex w-64 shrink-0 gap-3 rounded-md border border-border bg-surface p-3">
             <Link to="/anime/$id" params={{ id: entryRouteId(e) }} className="shrink-0">
               <img src={e.image_url} alt="" className="h-24 w-16 rounded object-cover" />
             </Link>
@@ -114,16 +114,16 @@ function Row({
   onRetry: () => void;
 }) {
   return (
-    <section className="mx-auto max-w-6xl px-5 py-10">
-      <h2 className="mb-5 font-display text-xl font-semibold">{title}</h2>
+    <section className="mx-auto max-w-6xl px-5 py-8">
+      <h2 className="mb-4 font-display text-lg font-semibold">{title}</h2>
       {loading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="aspect-[2/3] animate-pulse rounded-xl border border-border bg-surface" />
+            <div key={i} className="aspect-[2/3] animate-pulse rounded-md border border-border bg-surface" />
           ))}
         </div>
       ) : failed ? (
-        <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+        <div className="rounded-md border border-border bg-surface p-6 text-sm text-muted-foreground">
           Anime data is temporarily unavailable.
           <button onClick={onRetry} className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
             <RefreshCw className="h-3 w-3" /> Try again

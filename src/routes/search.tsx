@@ -48,18 +48,18 @@ function SearchInner() {
   const results = data?.data;
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-12">
-      <h1 className="font-display text-4xl font-bold">Find your next obsession</h1>
+    <div className="mx-auto max-w-6xl px-5 py-10">
+      <h1 className="font-display text-3xl font-semibold tracking-tight">Search</h1>
       <p className="mt-2 text-muted-foreground">Search across thousands of anime titles.</p>
 
-      <div className="relative mt-8 max-w-2xl">
-        <SearchIcon className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative mt-6 max-w-xl">
+        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Try 'frieren', 'cowboy bebop', 'jujutsu'…"
-          className="w-full rounded-full border border-border bg-card py-4 pl-14 pr-5 text-base outline-none transition-all placeholder:text-muted-foreground/60 focus:border-primary focus:ring-4 focus:ring-primary/20"
+          className="w-full rounded-md border border-border bg-surface py-3 pl-11 pr-4 text-sm outline-none transition-all placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary"
         />
       </div>
 
@@ -69,7 +69,7 @@ function SearchInner() {
         )}
         {isFetching && <p className="text-sm text-muted-foreground">Searching…</p>}
         {isError && !isFetching && (
-          <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+          <div className="rounded-md border border-border bg-surface p-6 text-sm text-muted-foreground">
             Anime data is temporarily unavailable — try again in a moment.
             <button onClick={() => refetch()} className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
               <RefreshCw className="h-3 w-3" /> Retry
