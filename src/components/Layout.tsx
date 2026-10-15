@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bookmark, Compass, Search, Settings as SettingsIcon, BarChart3 } from "lucide-react";
+import { ImportMetadataSync } from "./ImportMetadataSync";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -13,6 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <ImportMetadataSync />
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
           <Link to="/" className="font-display text-lg font-semibold tracking-tight">

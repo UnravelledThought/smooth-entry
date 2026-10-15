@@ -1,0 +1,4 @@
+- [x] Resolve and persist real artwork for MAL imports, including existing broken artwork.
+- [x] Move Discover ratings beside the release year, with accurate source labels.
+- [x] Update anime stats to the reference structure while preserving the existing theme and other insights.
+- [x] Verify import, Discover, and stats in the running app. MAL scores show unavailable while its service is down.

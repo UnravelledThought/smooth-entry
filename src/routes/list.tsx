@@ -15,6 +15,8 @@ export const Route = createFileRoute("/list")({
       { name: "description", content: "Your anime watchlist with episode progress and personal ratings." },
       { property: "og:title", content: "My list — AniTrack" },
       { property: "og:description", content: "Your anime watchlist with episode progress and personal ratings." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ListRoute,
@@ -25,6 +27,7 @@ function ListRoute() { return <Layout><ListPage /></Layout>; }
 const STATUSES: { key: WatchStatus; label: string }[] = [
   { key: "watching", label: "Watching" },
   { key: "completed", label: "Completed" },
+  { key: "onhold", label: "On-Hold" },
   { key: "plan", label: "Plan to watch" },
   { key: "dropped", label: "Dropped" },
 ];
@@ -129,7 +132,7 @@ function ListPage() {
       </div>
 
       <Tabs defaultValue="watching" className="mt-6">
-        <TabsList className="h-auto w-full justify-start gap-1 rounded-full border border-border bg-surface p-1">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-lg border border-border bg-surface p-1 sm:rounded-full">
           {STATUSES.map(({ key, label }) => {
             const count = filtered.filter((e) => e.status === key).length;
             return (
