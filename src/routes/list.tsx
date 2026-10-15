@@ -46,22 +46,33 @@ function ListPage() {
 
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("updated");
+  const [sortSnapshot, setSortSnapshot] = useState<LocalEntry[]>(list);
   const [selection, setSelection] = useState<Set<string>>(new Set());
+
+  // Keep sorting values stable while editing; explicitly choosing a sort refreshes them.
+  const snapshotIds = new Set(sortSnapshot.map((entry) => entry.id));
+  const newEntries = list.filter((entry) => !snapshotIds.has(entry.id));
+  if (newEntries.length > 0) {
+    setSortSnapshot((previous) => [...previous, ...newEntries]);
+  }
 
   const filtered = useMemo(() => {
     const qs = query.trim().toLowerCase();
     const out = qs ? list.filter((e) => e.title.toLowerCase().includes(qs)) : list.slice();
+    const snapshots = new Map(sortSnapshot.map((entry) => [entry.id, entry]));
     out.sort((a, b) => {
+      const savedA = snapshots.get(a.id) ?? a;
+      const savedB = snapshots.get(b.id) ?? b;
       switch (sort) {
         case "title": return a.title.localeCompare(b.title);
-        case "mal_score": return (Number(b.mal_score) || 0) - (Number(a.mal_score) || 0);
-        case "personal_score": return (Number(b.personal_score) || 0) - (Number(a.personal_score) || 0);
-        case "progress": return b.progress - a.progress;
-        default: return (b.updated_at || "").localeCompare(a.updated_at || "");
+        case "mal_score": return (Number(savedB.mal_score) || 0) - (Number(savedA.mal_score) || 0);
+        case "personal_score": return (Number(savedB.personal_score) || 0) - (Number(savedA.personal_score) || 0);
+        case "progress": return savedB.progress - savedA.progress;
+        default: return (savedB.updated_at || "").localeCompare(savedA.updated_at || "");
       }
     });
     return out;
-  }, [list, query, sort]);
+  }, [list, query, sort, sortSnapshot]);
 
   if (list.length === 0) {
     return (
@@ -124,7 +135,10 @@ function ListPage() {
         </div>
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
+          onChange={(e) => {
+            setSort(e.target.value as SortKey);
+            setSortSnapshot(list);
+          }}
           className="rounded-full border border-border bg-surface px-4 py-2 text-sm outline-none"
         >
           {SORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
