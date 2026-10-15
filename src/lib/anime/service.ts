@@ -13,7 +13,7 @@
  * status, and neither one falls back to the other for data it does not own.
  */
 
-import { SourceUnavailableError, alByAnilistId, alByMalId, alSearch, alSeasonNow, alTrending } from "./anilist";
+import { SourceUnavailableError, alByAnilistId, alByMalId, alByMalIds, alSearch, alSeasonNow, alTrending } from "./anilist";
 import { jikanDetails, jikanEpisodes } from "./jikan";
 import { TTL, cacheRead, cacheWrite, isStale, type CacheRecord } from "./cache";
 import type { Anime, Episode, MalDetails, SourceResult } from "./types";
@@ -57,6 +57,25 @@ export async function getTrending(): Promise<SourceResult<Anime[]>> {
 
 export async function getSeasonNow(): Promise<SourceResult<Anime[]>> {
   return cached("list:season", TTL.list, () => alSeasonNow());
+}
+
+export async function getAnimeSummaries(malIds: number[]): Promise<Anime[]> {
+  const found: Anime[] = [];
+  const missing: number[] = [];
+  for (const id of new Set(malIds)) {
+    const rec = cacheRead<Anime>(`anilist:mal:${id}`) ?? cacheRead<Anime>(`summary:mal:${id}`);
+    if (rec?.data && !isStale(rec, TTL.metadata)) found.push(rec.data);
+    else missing.push(id);
+  }
+  for (let i = 0; i < missing.length; i += 50) {
+    if (i > 0) await new Promise((resolve) => setTimeout(resolve, 700));
+    const batch = await alByMalIds(missing.slice(i, i + 50));
+    for (const anime of batch) {
+      cacheWrite(`summary:mal:${anime.mal_id}`, anime);
+      found.push(anime);
+    }
+  }
+  return found;
 }
 
 /** `id` is a MAL id, or `al<anilistId>` for titles with no MAL entry. */

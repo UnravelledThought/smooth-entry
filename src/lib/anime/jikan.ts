@@ -34,7 +34,7 @@ async function get<T>(path: string): Promise<T> {
     for (let attempt = 0; attempt < 2; attempt++) {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 900));
       try {
-        const res = await fetch(`${BASE}${path}`, { headers: { Accept: "application/json" } });
+        const res = await fetch(`${BASE}${path}`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(10000) });
         if (res.status === 429 || res.status >= 500) {
           if (attempt === 0) continue;
           throw new SourceUnavailableError("jikan", `MyAnimeList responded ${res.status}`);

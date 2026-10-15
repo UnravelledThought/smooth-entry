@@ -1,4 +1,5 @@
 import { addManyEntries, type LocalEntry, type WatchStatus } from "./local-store";
+import { hydrateImportedEntries } from "./import-metadata";
 
 // MyAnimeList XML export format compatibility.
 // Reference: https://myanimelist.net/panel.php?go=export
@@ -8,9 +9,9 @@ const MAL_TO_STATUS: Record<string, WatchStatus> = {
   "1": "watching",
   completed: "completed",
   "2": "completed",
-  onhold: "plan",
-  "on-hold": "plan",
-  "3": "plan",
+  onhold: "onhold",
+  "on-hold": "onhold",
+  "3": "onhold",
   dropped: "dropped",
   "4": "dropped",
   plantowatch: "plan",
@@ -21,6 +22,7 @@ const MAL_TO_STATUS: Record<string, WatchStatus> = {
 const STATUS_TO_MAL: Record<WatchStatus, string> = {
   watching: "Watching",
   completed: "Completed",
+  onhold: "On-Hold",
   plan: "Plan to Watch",
   dropped: "Dropped",
 };
@@ -39,7 +41,7 @@ export function toMalXml(entries: LocalEntry[]): string {
     .map(
       (e) => `  <anime>
     <series_animedb_id>${e.mal_id}</series_animedb_id>
-    <series_title><![CDATA[${e.title}]]></series_title>
+    <series_title>${esc(e.title)}</series_title>
     <series_episodes>${e.episodes ?? 0}</series_episodes>
     <my_watched_episodes>${e.progress ?? 0}</my_watched_episodes>
     <my_score>${e.personal_score != null ? Math.round(e.personal_score) : 0}</my_score>
@@ -56,7 +58,7 @@ export function toMalXml(entries: LocalEntry[]): string {
     <user_total_anime>${entries.length}</user_total_anime>
     <user_total_watching>${watching}</user_total_watching>
     <user_total_completed>${completed}</user_total_completed>
-    <user_total_onhold>0</user_total_onhold>
+    <user_total_onhold>${entries.filter((e) => e.status === "onhold").length}</user_total_onhold>
     <user_total_dropped>${dropped}</user_total_dropped>
     <user_total_plantowatch>${plan}</user_total_plantowatch>
   </myinfo>
@@ -100,13 +102,13 @@ export function parseMalXml(xml: string): ParsedEntry[] {
   return out;
 }
 
-export function importEntries(parsed: ParsedEntry[]): { imported: number; skipped: number } {
-  if (parsed.length === 0) return { imported: 0, skipped: 0 };
-  return addManyEntries(
+export async function importEntries(parsed: ParsedEntry[]): Promise<{ imported: number; skipped: number; missingArtwork: number }> {
+  if (parsed.length === 0) return { imported: 0, skipped: 0, missingArtwork: 0 };
+  const result = addManyEntries(
     parsed.map((p) => ({
       mal_id: p.mal_id,
       title: p.title,
-      image_url: `https://cdn.myanimelist.net/images/anime/1/${p.mal_id}.jpg`,
+      image_url: "",
       episodes: p.episodes,
       progress: p.progress,
       personal_score: p.personal_score,
@@ -114,4 +116,13 @@ export function importEntries(parsed: ParsedEntry[]): { imported: number; skippe
       status: p.status,
     })),
   );
+  try {
+    await hydrateImportedEntries();
+  } catch {
+    // The list remains imported even if artwork is temporarily unavailable.
+  }
+  const { getEntriesSnapshot } = await import("./local-store");
+  const ids = new Set(parsed.map((entry) => entry.mal_id));
+  const missingArtwork = getEntriesSnapshot().filter((entry) => ids.has(entry.mal_id ?? 0) && (!entry.image_url || /\/images\/anime\/1\/\d+\.jpg$/.test(entry.image_url))).length;
+  return { ...result, missingArtwork };
 }

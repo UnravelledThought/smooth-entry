@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { displayTitle, type Anime } from "./anime/types";
 
-export type WatchStatus = "watching" | "completed" | "plan" | "dropped";
+export type WatchStatus = "watching" | "completed" | "onhold" | "plan" | "dropped";
 
 export interface LocalEntry {
   id: string;
@@ -10,6 +10,8 @@ export interface LocalEntry {
   anilist_id: number | null;
   title: string;
   image_url: string;
+  banner_url?: string | null;
+  duration?: number | null;
   episodes: number | null;
   status: WatchStatus;
   progress: number;
@@ -48,6 +50,8 @@ function normalize(e: any): LocalEntry {
     anilist_id: typeof e?.anilist_id === "number" ? e.anilist_id : null,
     title: e?.title ?? "Untitled",
     image_url: e?.image_url ?? "",
+    banner_url: e?.banner_url ?? null,
+    duration: e?.duration ?? null,
     episodes: e?.episodes ?? null,
     status: (e?.status as WatchStatus) ?? "plan",
     progress: Number(e?.progress) || 0,
@@ -171,6 +175,8 @@ export function addEntry(anime: Anime, status: WatchStatus = "plan") {
     anilist_id: anime.anilist_id,
     title: displayTitle(anime),
     image_url: anime.images.cover,
+    banner_url: anime.images.banner,
+    duration: anime.duration,
     episodes: anime.episodes ?? null,
     status,
     progress: 0,

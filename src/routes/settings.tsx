@@ -15,6 +15,8 @@ export const Route = createFileRoute("/settings")({
       { name: "description", content: "Pick your accent color, back up your list, or import from MyAnimeList." },
       { property: "og:title", content: "Settings — AniTrack" },
       { property: "og:description", content: "Pick your accent color, back up your list, or import from MyAnimeList." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SettingsRoute,
@@ -121,6 +123,7 @@ function Settings() {
 
 function BackupSection() {
   const [msg, setMsg] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const xmlRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
 
@@ -136,14 +139,17 @@ function BackupSection() {
   };
 
   const importXml = async (file: File) => {
+    setImporting(true);
+    setMsg("Importing your list and fetching artwork…");
     try {
       const parsed = parseMalXml(await file.text());
       if (parsed.length === 0) throw new Error("No entries found in file.");
-      const res = importEntries(parsed);
-      setMsg(`Imported ${res.imported} new · skipped ${res.skipped} duplicates.`);
+      const res = await importEntries(parsed);
+      setMsg(`Imported ${res.imported} new · skipped ${res.skipped} duplicates.${res.missingArtwork ? ` Artwork unavailable for ${res.missingArtwork} entries; your list is saved.` : " Artwork saved."}`);
     } catch (e: any) {
       setMsg(`Import failed: ${e.message}`);
     } finally {
+      setImporting(false);
       if (xmlRef.current) xmlRef.current.value = "";
     }
   };
@@ -193,6 +199,7 @@ function BackupSection() {
           </button>
           <button
             onClick={() => xmlRef.current?.click()}
+            disabled={importing}
             className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
           >
             <Upload className="h-3.5 w-3.5" /> Import MAL XML

@@ -77,6 +77,7 @@ async function gql<T>(query: string, variables: Record<string, unknown>): Promis
     res = await fetch(ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
+      signal: AbortSignal.timeout(15000),
       body: JSON.stringify({ query, variables }),
     });
   } catch (err) {
@@ -273,4 +274,13 @@ export async function alByAnilistId(id: number): Promise<Anime | null> {
 export async function alByMalId(idMal: number): Promise<Anime | null> {
   const data = await gql<any>(`query($idMal:Int){Media(idMal:$idMal,type:ANIME){${MEDIA_FULL}}}`, { idMal });
   return data.Media ? mapMedia(data.Media) : null;
+}
+
+/** Lightweight batch metadata for imported lists; no per-title request storm. */
+export async function alByMalIds(ids: number[]): Promise<Anime[]> {
+  const data = await gql<any>(
+    `query($ids:[Int]){Page(perPage:50){media(idMal_in:$ids,type:ANIME){${MEDIA_CORE}}}}`,
+    { ids },
+  );
+  return (data.Page?.media ?? []).map(mapMedia);
 }
