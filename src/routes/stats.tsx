@@ -78,8 +78,8 @@ function StatsPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface p-6">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="min-w-0 rounded-lg border border-border bg-surface p-6">
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
             <Trophy className="h-3.5 w-3.5" /> Top rated
           </div>
@@ -94,14 +94,14 @@ function StatsPage() {
               >
                 <span className="w-5 text-center font-mono text-xs text-muted-foreground">{i + 1}</span>
                 <img src={e.image_url} alt="" className="h-12 w-8 rounded object-cover" />
-                <span className="flex-1 truncate text-sm">{e.title}</span>
+                <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
                 <span className="flex items-center gap-1 text-xs accent-text"><Star className="h-3 w-3 fill-current" />{e.personal_score?.toFixed(1)}</span>
               </Link>
             ))}
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-surface p-6">
+        <div className="min-w-0 rounded-lg border border-border bg-surface p-6">
           <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Score distribution</h2>
           <div className="mt-4 flex h-32 items-end gap-1">
             {stats.scoreBuckets.map((n, i) => {
