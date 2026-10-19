@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Bookmark, Minus, Plus, Trash2, Star, Heart, Search as SearchIcon, X } from "lucide-react";
+import { Check, CheckSquare, Bookmark, Minus, Plus, Trash2, Star, Heart, Search as SearchIcon, X } from "lucide-react";
 import {
   useEntries, updateEntry, deleteEntry, toggleFavorite, bulkSetStatus, bulkDelete,
   entryRouteId, type WatchStatus, type LocalEntry,
@@ -48,6 +52,8 @@ function ListPage() {
   const [sort, setSort] = useState<SortKey>("updated");
   const [sortSnapshot, setSortSnapshot] = useState<LocalEntry[]>(list);
   const [selection, setSelection] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ ids: string[]; label: string } | null>(null);
 
   // Keep sorting values stable while editing; explicitly choosing a sort refreshes them.
   const snapshotIds = new Set(sortSnapshot.map((entry) => entry.id));
@@ -93,6 +99,7 @@ function ListPage() {
     return n;
   });
   const clearSel = () => setSelection(new Set());
+  const exitSelect = () => { clearSel(); setSelectMode(false); };
 
   const doBulkStatus = (status: WatchStatus) => {
     const ids = Array.from(selection);
@@ -103,9 +110,14 @@ function ListPage() {
   const doBulkDelete = () => {
     const ids = Array.from(selection);
     if (ids.length === 0) return;
-    if (!confirm(`Delete ${ids.length} entries?`)) return;
-    bulkDelete(ids);
-    clearSel();
+    setPendingDelete({ ids, label: `${ids.length} ${ids.length === 1 ? "entry" : "entries"}` });
+  };
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    if (pendingDelete.ids.length === 1) deleteEntry(pendingDelete.ids[0]);
+    else bulkDelete(pendingDelete.ids);
+    setSelection((s) => { const n = new Set(s); pendingDelete.ids.forEach((id) => n.delete(id)); return n; });
+    setPendingDelete(null);
   };
 
   return (
@@ -143,6 +155,13 @@ function ListPage() {
         >
           {SORTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
         </select>
+        <button
+          onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm ${selectMode ? "accent-bg accent-border" : "border-border bg-surface text-muted-foreground hover:text-foreground"}`}
+        >
+          <CheckSquare className="h-3.5 w-3.5" />
+          {selectMode ? "Done" : "Select"}
+        </button>
       </div>
 
       <Tabs defaultValue="watching" className="mt-6">
@@ -171,7 +190,14 @@ function ListPage() {
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {items.map((entry) => (
-                    <EntryCard key={entry.id} entry={entry} selected={selection.has(entry.id)} onToggleSelect={() => toggleSel(entry.id)} />
+                    <EntryCard
+                      key={entry.id}
+                      entry={entry}
+                      selectMode={selectMode}
+                      selected={selection.has(entry.id)}
+                      onToggleSelect={() => toggleSel(entry.id)}
+                      onDelete={() => setPendingDelete({ ids: [entry.id], label: `“${entry.title}”` })}
+                    />
                   ))}
                 </div>
               )}
@@ -180,27 +206,45 @@ function ListPage() {
         })}
       </Tabs>
 
-      {selection.size > 0 && (
+      {selectMode && (
         <div className="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-fit max-w-[95vw] items-center gap-2 rounded-full border border-border bg-surface px-3 py-2 text-sm shadow-lg backdrop-blur">
           <span className="px-2 font-medium">{selection.size} selected</span>
+          <button
+            onClick={() => setSelection(new Set(filtered.map((e) => e.id)))}
+            className="rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+          >All</button>
           <span className="text-muted-foreground">Set:</span>
           {STATUSES.map((s) => (
             <button
               key={s.key}
               onClick={() => doBulkStatus(s.key)}
+              disabled={selection.size === 0}
               className="rounded-full border border-border px-2.5 py-1 text-xs hover:bg-foreground hover:text-background"
             >
               {s.label}
             </button>
           ))}
-          <button onClick={doBulkDelete} className="rounded-full border border-border px-2.5 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground">
+          <button onClick={doBulkDelete} disabled={selection.size === 0} className="disabled:opacity-40 rounded-full border border-border px-2.5 py-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground">
             Delete
           </button>
-          <button onClick={clearSel} className="ml-1 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:text-foreground">
+          <button onClick={exitSelect} aria-label="Exit selection" className="ml-1 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:text-foreground">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
+
+      <AlertDialog open={pendingDelete != null} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {pendingDelete?.label}?</AlertDialogTitle>
+            <AlertDialogDescription>This removes it from your list, including progress and your rating. This can't be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -232,7 +276,7 @@ function EntryCard({ entry, selectMode, selected, onToggleSelect, onDelete }: { 
         </button>
       )}
 
-      <div className="flex gap-3 p-3 pl-10">
+      <div className="flex gap-3 p-3">
         <Link to="/anime/$id" params={{ id: entryRouteId(entry) }} className="shrink-0">
           <img src={entry.image_url} alt="" className="h-24 w-16 rounded-lg object-cover" />
         </Link>
