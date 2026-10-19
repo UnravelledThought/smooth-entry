@@ -422,13 +422,26 @@ function EpisodesPanel({ anime }: { anime: Anime }) {
   if (!anime.mal_id) return <p className="text-sm text-muted-foreground">No MyAnimeList entry, so episode details aren't available.</p>;
   if (eps.isFetching) return <p className="text-sm text-muted-foreground">Loading episodes…</p>;
   if (eps.data?.status === "unavailable" || !eps.data) {
+    const count = anime.episodes ?? 0;
     return (
+      <div>
       <p className="text-sm text-muted-foreground">
         Episode details from MyAnimeList are temporarily unavailable.
         <button onClick={() => eps.refetch()} className="ml-2 inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-foreground">
           <RefreshCw className="h-3 w-3" /> Retry
         </button>
       </p>
+      {count > 0 && (
+        <ol className="mt-4 divide-y divide-border rounded-lg border border-border">
+          {Array.from({ length: Math.min(count, 500) }, (_, i) => (
+            <li key={i} className="flex items-center gap-3 px-3 py-2 text-sm">
+              <span className="w-8 font-mono text-xs text-muted-foreground">{i + 1}</span>
+              <span className="font-medium">Episode {i + 1}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      </div>
     );
   }
   if (eps.data.data.length === 0) return <p className="text-sm text-muted-foreground">No episode list published yet.</p>;

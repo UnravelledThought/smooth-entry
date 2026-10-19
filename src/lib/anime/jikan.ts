@@ -29,14 +29,20 @@ function queued<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /** One retry with backoff, then report unavailable. No loops. */
+/* Circuit breaker: after a network/5xx failure, skip MAL for a minute so the UI doesn't hang. */
+let downUntil = 0;
+
 async function get<T>(path: string): Promise<T> {
+  if (Date.now() < downUntil) throw new SourceUnavailableError("jikan", "MyAnimeList unavailable");
   return queued(async () => {
+    if (Date.now() < downUntil) throw new SourceUnavailableError("jikan", "MyAnimeList unavailable");
     for (let attempt = 0; attempt < 2; attempt++) {
       if (attempt > 0) await new Promise((r) => setTimeout(r, 900));
       try {
-        const res = await fetch(`${BASE}${path}`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(10000) });
+        const res = await fetch(`${BASE}${path}`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) });
+        if (res.status === 429 && attempt === 0) continue;
+        if (res.status >= 500) downUntil = Date.now() + 60_000;
         if (res.status === 429 || res.status >= 500) {
-          if (attempt === 0) continue;
           throw new SourceUnavailableError("jikan", `MyAnimeList responded ${res.status}`);
         }
         if (res.status === 404) throw new SourceUnavailableError("jikan", "Not found on MyAnimeList");
@@ -44,7 +50,7 @@ async function get<T>(path: string): Promise<T> {
         return (await res.json()) as T;
       } catch (err) {
         if (err instanceof SourceUnavailableError) throw err;
-        if (attempt === 0) continue;
+        downUntil = Date.now() + 60_000;
         throw new SourceUnavailableError("jikan", `Network error: ${String(err)}`);
       }
     }
