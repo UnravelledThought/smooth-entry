@@ -205,21 +205,32 @@ function ListPage() {
   );
 }
 
-function EntryCard({ entry, selected, onToggleSelect }: { entry: LocalEntry; selected: boolean; onToggleSelect: () => void }) {
+function EntryCard({ entry, selectMode, selected, onToggleSelect, onDelete }: { entry: LocalEntry; selectMode: boolean; selected: boolean; onToggleSelect: () => void; onDelete: () => void }) {
   const pct = entry.episodes ? Math.min(100, (entry.progress / entry.episodes) * 100) : 0;
 
   return (
     <div className={`group relative overflow-hidden rounded-md border bg-surface transition-colors ${selected ? "accent-border" : "border-border hover:border-foreground/40"}`}>
-      <label className="absolute left-2 top-2 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-border bg-background/80 backdrop-blur">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} className="accent-primary" />
-      </label>
-      <button
-        onClick={() => deleteEntry(entry.id)}
-        className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-background/80 opacity-0 backdrop-blur transition-opacity hover:bg-background group-hover:opacity-100"
-        aria-label="Remove"
-      >
-        <Trash2 className="h-3 w-3" />
-      </button>
+      {selectMode ? (
+        <button
+          type="button"
+          onClick={onToggleSelect}
+          aria-pressed={selected}
+          aria-label={selected ? `Deselect ${entry.title}` : `Select ${entry.title}`}
+          className={`absolute inset-0 z-20 flex items-start justify-end p-2 transition-colors ${selected ? "bg-background/20" : "bg-background/50 hover:bg-background/30"}`}
+        >
+          <span className={`grid h-6 w-6 place-items-center rounded-full border ${selected ? "accent-bg accent-border" : "border-foreground/40 bg-background/80"}`}>
+            {selected && <Check className="h-3.5 w-3.5" />}
+          </span>
+        </button>
+      ) : (
+        <button
+          onClick={onDelete}
+          className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-background/80 opacity-0 backdrop-blur transition-opacity hover:bg-background group-hover:opacity-100 focus:opacity-100"
+          aria-label="Remove"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      )}
 
       <div className="flex gap-3 p-3 pl-10">
         <Link to="/anime/$id" params={{ id: entryRouteId(entry) }} className="shrink-0">
