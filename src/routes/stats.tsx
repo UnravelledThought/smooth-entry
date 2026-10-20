@@ -55,7 +55,7 @@ function StatsPage() {
 
       <section className="rounded-lg border border-border bg-surface p-6">
         <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Anime stats</h2>
-        <div className="mt-4 flex h-2 overflow-hidden rounded-md bg-border" aria-label="Anime status distribution">
+        <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-border" aria-label="Anime status distribution">
           {stats.statusRows.map((r) => (
             <div key={r.key} className={`h-full ${STATUS_TONES[r.key]}`} style={{ width: `${r.pct}%` }} title={`${r.label}: ${r.count}`} />
           ))}
