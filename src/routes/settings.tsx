@@ -181,26 +181,26 @@ function BackupSection() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={exportJson}
-            className="inline-flex items-center gap-2 rounded-full accent-bg px-4 py-2 text-sm font-medium"
+            className="inline-flex items-center gap-2 rounded-md accent-bg px-4 py-2 text-sm font-medium"
           >
             <Save className="h-3.5 w-3.5" /> Export backup
           </button>
           <button
             onClick={() => jsonRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
           >
             <Upload className="h-3.5 w-3.5" /> Restore backup
           </button>
           <button
             onClick={exportXml}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
           >
             <Download className="h-3.5 w-3.5" /> Export MAL XML
           </button>
           <button
             onClick={() => xmlRef.current?.click()}
             disabled={importing}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:bg-foreground hover:text-background"
           >
             <Upload className="h-3.5 w-3.5" /> Import MAL XML
           </button>
@@ -225,7 +225,7 @@ function BackupSection() {
       <div className="rounded-lg border border-border bg-surface p-5">
         <button
           onClick={wipe}
-          className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-destructive hover:bg-destructive hover:text-destructive-foreground"
         >
           <Trash2 className="h-3.5 w-3.5" /> Clear all data
         </button>

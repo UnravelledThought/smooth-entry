@@ -63,7 +63,7 @@ function StatsPage() {
         <div className="mt-4 space-y-3">
           {stats.statusRows.map((r) => (
             <div key={r.key} className="grid grid-cols-[110px_minmax(0,1fr)_24px] items-center gap-3 text-xs sm:grid-cols-[140px_minmax(0,1fr)_32px]">
-              <span className="flex items-center gap-2"><span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_TONES[r.key]}`} />{r.label}</span>
+              <span className="flex items-center gap-2"><span className={`h-2 w-2 shrink-0 rounded-md ${STATUS_TONES[r.key]}`} />{r.label}</span>
               <div className="h-1.5 overflow-hidden rounded-full bg-border" role="meter" aria-label={r.label} aria-valuenow={r.count} aria-valuemin={0} aria-valuemax={stats.total}>
                 <div className={`h-full rounded-full ${STATUS_TONES[r.key]}`} style={{ width: `${r.pct}%` }} />
               </div>
