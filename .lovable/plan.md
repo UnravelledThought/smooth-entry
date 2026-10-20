@@ -24,3 +24,8 @@ Replace the "one list for all anime." text block at the top of Discover with a l
 - Description: strip HTML from AniList text.
 - Gradients use `from-background` tokens; no hardcoded colors. Corners `rounded-md`.
 - Verify with Playwright screenshots on desktop and mobile widths.
+
+## Later: AniTrack logo (SVG)
+- After the banner is done, design two logo options that fit the black-and-white look with your accent color.
+- Make the chosen one as a real SVG file drawn by hand, so it stays sharp at any size and can follow your accent color. It replaces the text logo in the header and becomes the browser tab icon.
+- Add both tasks to the roadmap.
