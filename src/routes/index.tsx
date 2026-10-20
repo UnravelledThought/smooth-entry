@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
+import { FeaturedHero } from "@/components/FeaturedHero";
 import { getTrending, getSeasonNow } from "@/lib/anime/service";
 import type { Anime } from "@/lib/anime/types";
 import { useFavorites, entryRouteId } from "@/lib/local-store";
@@ -27,8 +28,13 @@ function Index() {
   const top = useQuery({ queryKey: ["anilist", "top"], queryFn: getTrending, staleTime: 1000 * 60 * 60 * 6, retry: 1 });
   const season = useQuery({ queryKey: ["anilist", "season"], queryFn: getSeasonNow, staleTime: 1000 * 60 * 60 * 6, retry: 1 });
 
+  const featured = season.data?.data ?? [];
+  const showHero = season.isLoading || featured.some((a) => a.images.banner);
   return (
     <>
+      {showHero ? (
+        <FeaturedHero items={featured} loading={season.isLoading} />
+      ) : (
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-16">
         <h1 className="font-display text-5xl font-semibold leading-[1] tracking-tight md:text-7xl">
           one list<br />
@@ -43,6 +49,7 @@ function Index() {
           </Link>
         </div>
       </section>
+      )}
 
       <FavoritesStrip />
 
