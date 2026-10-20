@@ -35,10 +35,10 @@ function Index() {
           <span className="text-muted-foreground">for all anime.</span>
         </h1>
         <div className="mt-10 flex flex-wrap gap-2">
-          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-full px-5 py-2 text-sm font-medium hover:gap-3 transition-all">
+          <Link to="/search" className="group inline-flex items-center gap-2 accent-bg rounded-md px-5 py-2 text-sm font-medium hover:gap-3 transition-all">
             Start tracking <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link to="/list" className="inline-flex items-center gap-2 rounded-md border border-border px-5 py-2 text-sm text-muted-foreground hover:text-foreground">
             My list
           </Link>
         </div>
@@ -90,7 +90,7 @@ function FavoritesStrip() {
                 {e.progress}/{e.episodes ?? "?"} episodes
               </p>
               <p className="mt-1 text-xs">
-                <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">{e.status}</span>
+                <span className="rounded-md border border-border px-2 py-0.5 text-muted-foreground">{e.status}</span>
               </p>
             </div>
           </div>
@@ -125,7 +125,7 @@ function Row({
       ) : failed ? (
         <div className="rounded-md border border-border bg-surface p-6 text-sm text-muted-foreground">
           Anime data is temporarily unavailable.
-          <button onClick={onRetry} className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
+          <button onClick={onRetry} className="ml-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
             <RefreshCw className="h-3 w-3" /> Try again
           </button>
         </div>

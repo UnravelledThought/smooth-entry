@@ -27,7 +27,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={to}
                   to={to}
-                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
+                  className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${
                     active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -40,7 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Link
             to="/settings"
             aria-label="Settings"
-            className={`grid h-9 w-9 place-items-center rounded-full border border-border transition-colors ${
+            className={`grid h-9 w-9 place-items-center rounded-md border border-border transition-colors ${
               path === "/settings" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
             }`}
           >

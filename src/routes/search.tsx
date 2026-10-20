@@ -71,7 +71,7 @@ function SearchInner() {
         {isError && !isFetching && (
           <div className="rounded-md border border-border bg-surface p-6 text-sm text-muted-foreground">
             Anime data is temporarily unavailable — try again in a moment.
-            <button onClick={() => refetch()} className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
+            <button onClick={() => refetch()} className="ml-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
               <RefreshCw className="h-3 w-3" /> Retry
             </button>
           </div>

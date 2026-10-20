@@ -81,7 +81,7 @@ function AnimeDetail() {
     return (
       <div className="mx-auto max-w-5xl px-5 py-16 text-sm text-muted-foreground">
         Anime data is temporarily unavailable.
-        <button onClick={() => meta.refetch()} className="ml-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
+        <button onClick={() => meta.refetch()} className="ml-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1 text-xs text-foreground hover:bg-foreground hover:text-background">
           <RefreshCw className="h-3 w-3" /> Retry
         </button>
       </div>
@@ -109,7 +109,7 @@ function AnimeDetail() {
           <button
             onClick={onRefresh}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
             <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Refreshing…" : `Refresh · ${syncedLabel(meta.data?.last_synced_at ?? null)}`}
@@ -126,7 +126,7 @@ function AnimeDetail() {
                 <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Watch on</p>
                 <div className="flex flex-wrap gap-1.5">
                   {anime.streaming.map((s) => (
-                    <a key={s.site} href={s.url} target="_blank" rel="noreferrer" className="rounded-full border border-border px-2.5 py-1 text-xs hover:accent-text">
+                    <a key={s.site} href={s.url} target="_blank" rel="noreferrer" className="rounded-md border border-border px-2.5 py-1 text-xs hover:accent-text">
                       {s.site}
                     </a>
                   ))}
@@ -137,12 +137,12 @@ function AnimeDetail() {
 
           <div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              {anime.format && <span className="rounded-full border border-border px-2.5 py-1">{pretty(anime.format)}</span>}
-              {anime.status && <span className="rounded-full border border-border px-2.5 py-1">{pretty(anime.status)}</span>}
+              {anime.format && <span className="rounded-md border border-border px-2.5 py-1">{pretty(anime.format)}</span>}
+              {anime.status && <span className="rounded-md border border-border px-2.5 py-1">{pretty(anime.status)}</span>}
               {anime.season && anime.season_year && (
-                <span className="rounded-full border border-border px-2.5 py-1">{pretty(anime.season)} {anime.season_year}</span>
+                <span className="rounded-md border border-border px-2.5 py-1">{pretty(anime.season)} {anime.season_year}</span>
               )}
-              {anime.duration && <span className="rounded-full border border-border px-2.5 py-1">{anime.duration} min</span>}
+              {anime.duration && <span className="rounded-md border border-border px-2.5 py-1">{anime.duration} min</span>}
             </div>
 
             <h1 className="mt-3 font-display text-4xl font-semibold leading-tight md:text-5xl">{displayTitle(anime)}</h1>
@@ -186,7 +186,7 @@ function AnimeDetail() {
             {anime.genres.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">
                 {anime.genres.map((g) => (
-                  <span key={g} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{g}</span>
+                  <span key={g} className="rounded-md border border-border px-3 py-1 text-xs text-muted-foreground">{g}</span>
                 ))}
               </div>
             )}
@@ -196,13 +196,13 @@ function AnimeDetail() {
                 <>
                   <button
                     onClick={() => deleteEntry(entry.id)}
-                    className="inline-flex items-center gap-2 rounded-full border border-foreground px-5 py-2.5 text-sm font-semibold"
+                    className="inline-flex items-center gap-2 rounded-md border border-foreground px-5 py-2.5 text-sm font-semibold"
                   >
                     <BookmarkCheck className="h-4 w-4" /> In your list
                   </button>
                   <button
                     onClick={() => toggleFavorite(entry.id)}
-                    className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold ${
+                    className={`inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold ${
                       entry.is_favorite ? "accent-bg" : "border border-border text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -212,12 +212,12 @@ function AnimeDetail() {
               ) : (
                 <button
                   onClick={() => addEntry({ ...anime, mal: malData })}
-                  className="accent-bg inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all hover:gap-3"
+                  className="accent-bg inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold transition-all hover:gap-3"
                 >
                   <Plus className="h-4 w-4" /> Add to list
                 </button>
               )}
-              <Link to="/list" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm">
+              <Link to="/list" className="inline-flex items-center gap-2 rounded-md border border-border px-5 py-2.5 text-sm">
                 View my list
               </Link>
             </div>
@@ -225,14 +225,14 @@ function AnimeDetail() {
         </div>
 
         <Tabs defaultValue="overview" className="mt-12">
-          <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-full border border-border bg-surface p-1">
+          <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-md border border-border bg-surface p-1">
             {[
               ["overview", "Overview"],
               ["episodes", "Episodes"],
               ["characters", "Characters"],
               ["related", "Related"],
             ].map(([v, label]) => (
-              <TabsTrigger key={v} value={v} className="rounded-full px-4 py-1.5 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background">
+              <TabsTrigger key={v} value={v} className="rounded-md px-4 py-1.5 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background">
                 {label}
               </TabsTrigger>
             ))}
@@ -250,7 +250,7 @@ function AnimeDetail() {
               <Section title="Studios">
                 <div className="flex flex-wrap gap-2">
                   {anime.studios.map((s) => (
-                    <span key={s.id} className="rounded-full border border-border px-3 py-1 text-xs">{s.name}</span>
+                    <span key={s.id} className="rounded-md border border-border px-3 py-1 text-xs">{s.name}</span>
                   ))}
                 </div>
               </Section>
@@ -273,7 +273,7 @@ function AnimeDetail() {
               <Section title="Tags">
                 <div className="flex flex-wrap gap-1.5">
                   {anime.tags.filter((t) => !t.spoiler).slice(0, 20).map((t) => (
-                    <span key={t.id} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+                    <span key={t.id} className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground">
                       {t.name}{t.rank != null ? ` ${t.rank}%` : ""}
                     </span>
                   ))}
@@ -387,7 +387,7 @@ function MalFacts({
       ) : unavailable || !data ? (
         <p className="text-sm text-muted-foreground">
           Temporarily unavailable.
-          <button onClick={onRetry} className="ml-2 inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-foreground">
+          <button onClick={onRetry} className="ml-2 inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-xs text-foreground">
             <RefreshCw className="h-3 w-3" /> Retry
           </button>
         </p>
@@ -427,7 +427,7 @@ function EpisodesPanel({ anime }: { anime: Anime }) {
       <div>
       <p className="text-sm text-muted-foreground">
         Episode details from MyAnimeList are temporarily unavailable.
-        <button onClick={() => eps.refetch()} className="ml-2 inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs text-foreground">
+        <button onClick={() => eps.refetch()} className="ml-2 inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-xs text-foreground">
           <RefreshCw className="h-3 w-3" /> Retry
         </button>
       </p>
@@ -454,8 +454,8 @@ function EpisodesPanel({ anime }: { anime: Anime }) {
           <span className="font-medium">{e.title ?? `Episode ${e.episode_number}`}</span>
           {e.title_japanese && <span className="text-xs text-muted-foreground">{e.title_japanese}</span>}
           <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-            {e.filler && <span className="rounded-full border border-border px-2 py-0.5">Filler</span>}
-            {e.recap && <span className="rounded-full border border-border px-2 py-0.5">Recap</span>}
+            {e.filler && <span className="rounded-md border border-border px-2 py-0.5">Filler</span>}
+            {e.recap && <span className="rounded-md border border-border px-2 py-0.5">Recap</span>}
             {e.score != null && <span className="flex items-center gap-1"><Star className="h-3 w-3" />{e.score.toFixed(1)}</span>}
             {e.air_date && <span>{new Date(e.air_date).toLocaleDateString()}</span>}
           </span>
