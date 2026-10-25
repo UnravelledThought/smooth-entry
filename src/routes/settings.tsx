@@ -133,8 +133,10 @@ function BackupSection() {
 
   const exportXml = () => {
     const entries = getEntriesSnapshot();
+    const exportable = malExportable(entries);
     download(`anitrack-export-${new Date().toISOString().slice(0, 10)}.xml`, toMalXml(entries), "application/xml");
-    setMsg(`Exported ${entries.length} entries as MyAnimeList XML.`);
+    const skipped = entries.length - exportable.length;
+    setMsg(`Exported ${exportable.length} entries as MyAnimeList XML.${skipped ? ` ${skipped} title${skipped === 1 ? "" : "s"} without a MyAnimeList page can't be exported.` : ""}`);
   };
 
   const exportJson = () => {
@@ -169,8 +171,9 @@ function BackupSection() {
     }
   };
 
+  const [confirmWipe, setConfirmWipe] = useState(false);
+
   const wipe = () => {
-    if (!confirm("Delete your entire list and settings from this browser?")) return;
     clearAll();
     setMsg("All local data cleared.");
   };
