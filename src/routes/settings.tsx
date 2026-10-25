@@ -6,7 +6,11 @@ import { Palette, Download, Upload, Save, Trash2 } from "lucide-react";
 import {
   useSettings, setAccentColor, getEntriesSnapshot, exportBackup, importBackup, clearAll,
 } from "@/lib/local-store";
-import { toMalXml, parseMalXml, importEntries } from "@/lib/mal-io";
+import { toMalXml, parseMalXml, importEntries, malExportable } from "@/lib/mal-io";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -129,8 +133,10 @@ function BackupSection() {
 
   const exportXml = () => {
     const entries = getEntriesSnapshot();
+    const exportable = malExportable(entries);
     download(`anitrack-export-${new Date().toISOString().slice(0, 10)}.xml`, toMalXml(entries), "application/xml");
-    setMsg(`Exported ${entries.length} entries as MyAnimeList XML.`);
+    const skipped = entries.length - exportable.length;
+    setMsg(`Exported ${exportable.length} entries as MyAnimeList XML.${skipped ? ` ${skipped} title${skipped === 1 ? "" : "s"} without a MyAnimeList page can't be exported.` : ""}`);
   };
 
   const exportJson = () => {
@@ -165,8 +171,9 @@ function BackupSection() {
     }
   };
 
+  const [confirmWipe, setConfirmWipe] = useState(false);
+
   const wipe = () => {
-    if (!confirm("Delete your entire list and settings from this browser?")) return;
     clearAll();
     setMsg("All local data cleared.");
   };
@@ -224,12 +231,32 @@ function BackupSection() {
 
       <div className="rounded-lg border border-border bg-surface p-5">
         <button
-          onClick={wipe}
+          onClick={() => setConfirmWipe(true)}
           className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-destructive hover:bg-destructive hover:text-destructive-foreground"
         >
           <Trash2 className="h-3.5 w-3.5" /> Clear all data
         </button>
       </div>
+
+      <AlertDialog open={confirmWipe} onOpenChange={setConfirmWipe}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This deletes your entire list, favorites, and settings from this browser. Export a backup first if you want to keep anything. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={wipe}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Clear everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

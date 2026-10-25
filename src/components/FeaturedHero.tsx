@@ -26,7 +26,18 @@ export function FeaturedHero({ items, loading }: { items: Anime[]; loading: bool
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
+  const resumeTimer = useRef<number | null>(null);
   const count = slides.length;
+
+  // On touch devices there's no mouse-leave, so resume auto-play a few seconds after the touch ends.
+  const pauseForTouch = () => {
+    if (resumeTimer.current) window.clearTimeout(resumeTimer.current);
+    setPaused(true);
+  };
+  const resumeAfterTouch = () => {
+    if (resumeTimer.current) window.clearTimeout(resumeTimer.current);
+    resumeTimer.current = window.setTimeout(() => setPaused(false), 6000);
+  };
 
   const scrollTo = (i: number) => {
     const el = trackRef.current;
@@ -61,7 +72,9 @@ export function FeaturedHero({ items, loading }: { items: Anime[]; loading: bool
         <div
           ref={trackRef}
           onScroll={onScroll}
-          onTouchStart={() => setPaused(true)}
+          onTouchStart={pauseForTouch}
+          onTouchEnd={resumeAfterTouch}
+          onTouchCancel={resumeAfterTouch}
           className="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {slides.map((a) => (

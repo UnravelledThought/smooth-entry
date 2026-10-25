@@ -3,6 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getAnime, getEpisodes, getMalDetails, refreshAnime } from "@/lib/anime/service";
 import { displayTitle, routeIdFor, type Anime } from "@/lib/anime/types";
 import { useEntryForAnime, addEntry, deleteEntry, toggleFavorite } from "@/lib/local-store";
@@ -43,6 +47,7 @@ function AnimeDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const meta = useQuery({
     queryKey: ["anime", id],
@@ -195,7 +200,7 @@ function AnimeDetail() {
               {entry ? (
                 <>
                   <button
-                    onClick={() => deleteEntry(entry.id)}
+                    onClick={() => setConfirmRemove(true)}
                     className="inline-flex items-center gap-2 rounded-md border border-foreground px-5 py-2.5 text-sm font-semibold"
                   >
                     <BookmarkCheck className="h-4 w-4" /> In your list
@@ -331,6 +336,24 @@ function AnimeDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove “{displayTitle(anime)}” from your list?</AlertDialogTitle>
+            <AlertDialogDescription>This removes it from your list, including progress and your rating. This can't be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => entry && deleteEntry(entry.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 }
