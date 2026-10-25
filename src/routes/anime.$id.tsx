@@ -47,6 +47,7 @@ function AnimeDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const meta = useQuery({
     queryKey: ["anime", id],
@@ -199,7 +200,7 @@ function AnimeDetail() {
               {entry ? (
                 <>
                   <button
-                    onClick={() => deleteEntry(entry.id)}
+                    onClick={() => setConfirmRemove(true)}
                     className="inline-flex items-center gap-2 rounded-md border border-foreground px-5 py-2.5 text-sm font-semibold"
                   >
                     <BookmarkCheck className="h-4 w-4" /> In your list
