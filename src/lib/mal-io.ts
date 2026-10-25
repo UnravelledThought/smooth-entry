@@ -31,7 +31,13 @@ function esc(s: string | number | null | undefined) {
   return String(s ?? "").replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c] as string));
 }
 
-export function toMalXml(entries: LocalEntry[]): string {
+/** MAL can only accept titles that have a MyAnimeList id. */
+export function malExportable(entries: LocalEntry[]): LocalEntry[] {
+  return entries.filter((e) => e.mal_id != null);
+}
+
+export function toMalXml(all: LocalEntry[]): string {
+  const entries = malExportable(all);
   const completed = entries.filter((e) => e.status === "completed").length;
   const watching = entries.filter((e) => e.status === "watching").length;
   const plan = entries.filter((e) => e.status === "plan").length;
