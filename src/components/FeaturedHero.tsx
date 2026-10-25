@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
 import { displayTitle, routeIdFor, type Anime } from "@/lib/anime/types";
 import { addEntry, toggleFavorite, useEntryForAnime } from "@/lib/local-store";
@@ -25,19 +25,31 @@ export function FeaturedHero({ items, loading }: { items: Anime[]; loading: bool
   const slides = items.filter((a) => a.images.banner).slice(0, 6);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
   const count = slides.length;
+
+  const scrollTo = (i: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (paused || count < 2) return;
-    const t = setTimeout(() => setIndex((i) => (i + 1) % count), 7000);
+    const t = setTimeout(() => scrollTo((index + 1) % count), 7000);
     return () => clearTimeout(t);
   }, [index, paused, count]);
 
   if (loading) return <div className="mx-auto mt-6 h-[360px] max-w-6xl rounded-md bg-surface md:h-[460px]" style={{ width: "calc(100% - 2.5rem)" }} />;
   if (count === 0) return null;
 
-  const current = slides[Math.min(index, count - 1)];
-  const go = (d: number) => setIndex((i) => (i + d + count) % count);
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el || !el.clientWidth) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== index) setIndex(i);
+  };
+  const go = (d: number) => scrollTo((index + d + count) % count);
 
   return (
     <section className="mx-auto max-w-6xl px-5 pt-6">
@@ -46,18 +58,21 @@ export function FeaturedHero({ items, loading }: { items: Anime[]; loading: bool
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {slides.map((a, i) => (
-          <img
-            key={a.internal_id}
-            src={a.images.banner!}
-            alt=""
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${i === index ? "opacity-100" : "opacity-0"}`}
-          />
-        ))}
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-
-        <Slide anime={current} />
+        <div
+          ref={trackRef}
+          onScroll={onScroll}
+          onTouchStart={() => setPaused(true)}
+          className="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {slides.map((a) => (
+            <div key={a.internal_id} className="relative h-full w-full shrink-0 snap-center">
+              <img src={a.images.banner!} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+              <Slide anime={a} />
+            </div>
+          ))}
+        </div>
 
         {count > 1 && (
           <>
@@ -71,7 +86,7 @@ export function FeaturedHero({ items, loading }: { items: Anime[]; loading: bool
               {slides.map((a, i) => (
                 <button
                   key={a.internal_id}
-                  onClick={() => setIndex(i)}
+                  onClick={() => scrollTo(i)}
                   aria-label={`Show ${displayTitle(a)}`}
                   className={`h-1 rounded-full transition-all ${i === index ? "w-6 accent-bg" : "w-3 bg-foreground/30 hover:bg-foreground/60"}`}
                 />
