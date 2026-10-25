@@ -231,12 +231,32 @@ function BackupSection() {
 
       <div className="rounded-lg border border-border bg-surface p-5">
         <button
-          onClick={wipe}
+          onClick={() => setConfirmWipe(true)}
           className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-destructive hover:bg-destructive hover:text-destructive-foreground"
         >
           <Trash2 className="h-3.5 w-3.5" /> Clear all data
         </button>
       </div>
+
+      <AlertDialog open={confirmWipe} onOpenChange={setConfirmWipe}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This deletes your entire list, favorites, and settings from this browser. Export a backup first if you want to keep anything. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={wipe}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Clear everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
