@@ -6,7 +6,11 @@ import { Palette, Download, Upload, Save, Trash2 } from "lucide-react";
 import {
   useSettings, setAccentColor, getEntriesSnapshot, exportBackup, importBackup, clearAll,
 } from "@/lib/local-store";
-import { toMalXml, parseMalXml, importEntries } from "@/lib/mal-io";
+import { toMalXml, parseMalXml, importEntries, malExportable } from "@/lib/mal-io";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
