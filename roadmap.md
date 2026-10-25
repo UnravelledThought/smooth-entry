@@ -3,4 +3,5 @@
 - [x] Update anime stats to the reference structure while preserving the existing theme and other insights.
 - [x] Verify import, Discover, and stats in the running app. MAL scores show unavailable while its service is down.
 - [x] Discover featured banner slideshow
+- [x] Project audit fixes: confirm dialog before removing from list on anime page, MAL XML export skips AniList-only titles, hero banner resumes auto-play after touch, styled confirm for Clear all data.
 - [ ] AniTrack logo as SVG (two options, then header + tab icon)
