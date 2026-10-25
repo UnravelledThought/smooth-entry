@@ -72,7 +72,9 @@ export function FeaturedHero({ items, loading }: { items: Anime[]; loading: bool
         <div
           ref={trackRef}
           onScroll={onScroll}
-          onTouchStart={() => setPaused(true)}
+          onTouchStart={pauseForTouch}
+          onTouchEnd={resumeAfterTouch}
+          onTouchCancel={resumeAfterTouch}
           className="flex h-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {slides.map((a) => (
