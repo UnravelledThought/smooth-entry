@@ -244,6 +244,12 @@ function AnimeDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="mt-6 space-y-8">
+            {anime.titles.english && anime.titles.english !== anime.titles.romaji && (
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">English title</p>
+                <p className="mt-1 text-base">{anime.titles.english}</p>
+              </div>
+            )}
             {anime.description && <p className="leading-relaxed text-muted-foreground whitespace-pre-line">{anime.description}</p>}
 
             <div className="grid gap-6 sm:grid-cols-2">
