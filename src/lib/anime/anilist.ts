@@ -284,3 +284,27 @@ export async function alByMalIds(ids: number[]): Promise<Anime[]> {
   );
   return (data.Page?.media ?? []).map(mapMedia);
 }
+
+function nextSeason(): { season: string; year: number } {
+  const { season, year } = currentSeason();
+  const order = ["WINTER", "SPRING", "SUMMER", "FALL"];
+  const i = order.indexOf(season);
+  return i === 3 ? { season: "WINTER", year: year + 1 } : { season: order[i + 1], year };
+}
+
+export async function alNextSeason(perPage = 30): Promise<Anime[]> {
+  const { season, year } = nextSeason();
+  const data = await gql<any>(
+    `query($season:MediaSeason,$year:Int,$perPage:Int){Page(perPage:$perPage){media(season:$season,seasonYear:$year,type:ANIME,sort:POPULARITY_DESC,isAdult:false){${MEDIA_CORE}}}}`,
+    { season, year, perPage },
+  );
+  return (data.Page?.media ?? []).map(mapMedia);
+}
+
+export async function alAnticipated(perPage = 30): Promise<Anime[]> {
+  const data = await gql<any>(
+    `query($perPage:Int){Page(perPage:$perPage){media(status:NOT_YET_RELEASED,type:ANIME,sort:POPULARITY_DESC,isAdult:false){${MEDIA_CORE}}}}`,
+    { perPage },
+  );
+  return (data.Page?.media ?? []).map(mapMedia);
+}
