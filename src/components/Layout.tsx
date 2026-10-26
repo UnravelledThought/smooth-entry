@@ -17,8 +17,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <ImportMetadataSync />
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
-          <Link to="/" className="font-display text-lg font-semibold tracking-tight">
-            ani<span className="accent-text">track</span>
+          <Link to="/" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
+            <Logo className="h-6 w-6" />
+            <span>ani<span className="accent-text">track</span></span>
           </Link>
           <nav className="flex items-center gap-1">
             {nav.map(({ to, label, icon: Icon }) => {
