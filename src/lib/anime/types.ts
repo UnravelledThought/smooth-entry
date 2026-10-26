@@ -141,7 +141,7 @@ export interface Episode {
 }
 
 /** Display title preference: romaji, then English, then native. */
-...
+export function displayTitle(a: Anime): string {
   return a.titles.romaji || a.titles.english || a.titles.native || "Untitled";
 }
 
