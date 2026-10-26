@@ -140,9 +140,9 @@ export interface Episode {
   recap: boolean;
 }
 
-/** Display title preference: English, then romaji, then native. */
-export function displayTitle(a: Pick<Anime, "titles">): string {
-  return a.titles.english || a.titles.romaji || a.titles.native || "Untitled";
+/** Display title preference: romaji, then English, then native. */
+...
+  return a.titles.romaji || a.titles.english || a.titles.native || "Untitled";
 }
 
 /** Route id used by /anime/$id — MAL id when known, else `al<anilistId>`. */

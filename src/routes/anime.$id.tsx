@@ -152,7 +152,7 @@ function AnimeDetail() {
 
             <h1 className="mt-3 font-display text-4xl font-semibold leading-tight md:text-5xl">{displayTitle(anime)}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {[anime.titles.romaji, anime.titles.native].filter(Boolean).join(" · ")}
+              {anime.titles.native}
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-6">
