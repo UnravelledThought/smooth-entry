@@ -112,7 +112,7 @@ function fuzzyDate(d: any): string | null {
 }
 
 function title(t: any): string {
-  return t?.english || t?.romaji || t?.native || "Untitled";
+  return t?.romaji || t?.english || t?.native || "Untitled";
 }
 
 export function mapMedia(m: any): Anime {
