@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bookmark, Compass, Search, Settings as SettingsIcon, BarChart3 } from "lucide-react";
+import { Bookmark, CalendarClock, Compass, Search, Settings as SettingsIcon, BarChart3 } from "lucide-react";
 import { ImportMetadataSync } from "./ImportMetadataSync";
 import { Logo } from "./Logo";
 
@@ -9,6 +9,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const nav = [
     { to: "/" as const, label: "Discover", icon: Compass },
     { to: "/search" as const, label: "Search", icon: Search },
+    { to: "/upcoming" as const, label: "Upcoming", icon: CalendarClock },
     { to: "/list" as const, label: "List", icon: Bookmark },
     { to: "/stats" as const, label: "Stats", icon: BarChart3 },
   ];

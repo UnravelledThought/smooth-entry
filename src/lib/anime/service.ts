@@ -13,7 +13,7 @@
  * status, and neither one falls back to the other for data it does not own.
  */
 
-import { SourceUnavailableError, alByAnilistId, alByMalId, alByMalIds, alSearch, alSeasonNow, alTrending } from "./anilist";
+import { SourceUnavailableError, alByAnilistId, alByMalId, alByMalIds, alSearch, alSeasonNow, alTrending, alNextSeason, alAnticipated } from "./anilist";
 import { jikanDetails, jikanEpisodes } from "./jikan";
 import { TTL, cacheRead, cacheWrite, isStale, type CacheRecord } from "./cache";
 import type { Anime, Episode, MalDetails, SourceResult } from "./types";
@@ -138,4 +138,14 @@ export async function refreshAnime(id: string): Promise<SourceResult<Anime | nul
     await getEpisodes(a, { force: true });
   }
   return res;
+}
+
+const UPCOMING_TTL = 1000 * 60 * 60 * 12;
+
+export async function getNextSeason(): Promise<SourceResult<Anime[]>> {
+  return cached("list:next-season", UPCOMING_TTL, () => alNextSeason());
+}
+
+export async function getAnticipated(): Promise<SourceResult<Anime[]>> {
+  return cached("list:anticipated", UPCOMING_TTL, () => alAnticipated());
 }

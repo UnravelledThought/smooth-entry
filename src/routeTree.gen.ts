@@ -14,6 +14,7 @@ import { Route as ListRouteImport } from './routes/list'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as UpcomingRouteImport } from './routes/upcoming'
 import { Route as AnimeIdRouteImport } from './routes/anime.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const StatsRoute = StatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UpcomingRoute = UpcomingRouteImport.update({
+  id: '/upcoming',
+  path: '/upcoming',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnimeIdRoute = AnimeIdRouteImport.update({
   id: '/anime/$id',
   path: '/anime/$id',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
+  '/upcoming': typeof UpcomingRoute
   '/anime/$id': typeof AnimeIdRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
+  '/upcoming': typeof UpcomingRoute
   '/anime/$id': typeof AnimeIdRoute
 }
 export interface FileRoutesById {
@@ -70,13 +78,28 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/stats': typeof StatsRoute
+  '/upcoming': typeof UpcomingRoute
   '/anime/$id': typeof AnimeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/list' | '/search' | '/settings' | '/stats' | '/anime/$id'
+  fullPaths:
+    | '/'
+    | '/list'
+    | '/search'
+    | '/settings'
+    | '/stats'
+    | '/upcoming'
+    | '/anime/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/list' | '/search' | '/settings' | '/stats' | '/anime/$id'
+  to:
+    | '/'
+    | '/list'
+    | '/search'
+    | '/settings'
+    | '/stats'
+    | '/upcoming'
+    | '/anime/$id'
   id:
     | '__root__'
     | '/'
@@ -84,6 +107,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/stats'
+    | '/upcoming'
     | '/anime/$id'
   fileRoutesById: FileRoutesById
 }
@@ -93,6 +117,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   StatsRoute: typeof StatsRoute
+  UpcomingRoute: typeof UpcomingRoute
   AnimeIdRoute: typeof AnimeIdRoute
 }
 
@@ -133,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/upcoming': {
+      id: '/upcoming'
+      path: '/upcoming'
+      fullPath: '/upcoming'
+      preLoaderRoute: typeof UpcomingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/anime/$id': {
       id: '/anime/$id'
       path: '/anime/$id'
@@ -149,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   StatsRoute: StatsRoute,
+  UpcomingRoute: UpcomingRoute,
   AnimeIdRoute: AnimeIdRoute,
 }
 export const routeTree = rootRouteImport
