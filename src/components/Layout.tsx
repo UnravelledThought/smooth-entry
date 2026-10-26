@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bookmark, Compass, Search, Settings as SettingsIcon, BarChart3 } from "lucide-react";
 import { ImportMetadataSync } from "./ImportMetadataSync";
+import { Logo } from "./Logo";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
