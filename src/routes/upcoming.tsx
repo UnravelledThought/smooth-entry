@@ -96,7 +96,16 @@ function UpcomingInner() {
       </div>
 
       <div className="mt-8">
-        {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {loading && (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" aria-label="Loading">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="aspect-[2/3] animate-pulse rounded-md bg-surface" />
+                <div className="h-3 w-3/4 animate-pulse rounded bg-surface" />
+              </div>
+            ))}
+          </div>
+        )}
         {error && !loading && (
           <div className="rounded-md border border-border bg-surface p-6 text-sm text-muted-foreground">
             Anime data is temporarily unavailable.

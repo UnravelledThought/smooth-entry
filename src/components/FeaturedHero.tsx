@@ -149,9 +149,8 @@ function Slide({ anime }: { anime: Anime }) {
           </button>
         )}
         <button
-          onClick={() => entry && toggleFavorite(entry.id)}
-          disabled={!entry}
-          title={entry ? "Favorite" : "Add to list first"}
+          onClick={() => toggleFavorite(entry ? entry.id : addEntry(anime))}
+          title={entry ? "Favorite" : "Add to list and favorite"}
           aria-label="Favorite"
           className={`grid h-9 w-9 place-items-center rounded-md border disabled:opacity-40 ${entry?.is_favorite ? "accent-bg accent-border" : "border-border bg-background/50 hover:text-foreground"}`}
         >

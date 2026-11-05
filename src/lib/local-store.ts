@@ -9,6 +9,8 @@ export interface LocalEntry {
   mal_id: number | null;
   anilist_id: number | null;
   title: string;
+  /** Other names (English, Japanese) used by list search. */
+  alt_titles?: string[];
   image_url: string;
   banner_url?: string | null;
   duration?: number | null;
@@ -49,6 +51,7 @@ function normalize(e: any): LocalEntry {
     mal_id: typeof e?.mal_id === "number" ? e.mal_id : null,
     anilist_id: typeof e?.anilist_id === "number" ? e.anilist_id : null,
     title: e?.title ?? "Untitled",
+    alt_titles: Array.isArray(e?.alt_titles) ? e.alt_titles.filter((t: unknown) => typeof t === "string") : [],
     image_url: e?.image_url ?? "",
     banner_url: e?.banner_url ?? null,
     duration: e?.duration ?? null,
@@ -161,19 +164,20 @@ export function setAccentColor(accent_color: string) {
   commit({ ...s, settings: { ...s.settings, accent_color } });
 }
 
-export function addEntry(anime: Anime, status: WatchStatus = "plan") {
+export function addEntry(anime: Anime, status: WatchStatus = "plan"): string {
   const s = getState();
-  const exists = s.entries.some(
+  const exists = s.entries.find(
     (e) =>
       (anime.mal_id != null && e.mal_id === anime.mal_id) ||
       (anime.anilist_id != null && e.anilist_id === anime.anilist_id),
   );
-  if (exists) return;
+  if (exists) return exists.id;
   const entry: LocalEntry = {
     id: newId(),
     mal_id: anime.mal_id,
     anilist_id: anime.anilist_id,
     title: displayTitle(anime),
+    alt_titles: altTitles(anime),
     image_url: anime.images.cover,
     banner_url: anime.images.banner,
     duration: anime.duration,
@@ -188,6 +192,19 @@ export function addEntry(anime: Anime, status: WatchStatus = "plan") {
     updated_at: now(),
   };
   commit({ ...s, entries: [entry, ...s.entries] });
+  return entry.id;
+}
+
+export function altTitles(anime: Pick<Anime, "titles">): string[] {
+  const t = anime.titles;
+  return [t.romaji, t.english, t.native].filter((v): v is string => !!v);
+}
+
+/** Case-insensitive match against the saved title and any alternate names. */
+export function entryMatches(e: Pick<LocalEntry, "title" | "alt_titles">, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [e.title, ...(e.alt_titles ?? [])].some((t) => t.toLowerCase().includes(q));
 }
 
 export function updateEntry(id: string, patch: Partial<LocalEntry>) {

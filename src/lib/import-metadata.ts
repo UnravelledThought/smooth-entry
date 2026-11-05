@@ -1,10 +1,10 @@
 import { getAnimeSummaries } from "./anime/service";
-import { getEntriesSnapshot, updateEntry } from "./local-store";
+import { altTitles, getEntriesSnapshot, updateEntry } from "./local-store";
 
 let pending: Promise<number> | null = null;
 
 export function needsImportMetadata(entry: ReturnType<typeof getEntriesSnapshot>[number]) {
-  return entry.mal_id != null && (!entry.image_url || /\/images\/anime\/1\/\d+\.jpg$/.test(entry.image_url) || entry.duration == null);
+  return entry.mal_id != null && (!entry.image_url || /\/images\/anime\/1\/\d+\.jpg$/.test(entry.image_url) || entry.duration == null || !entry.alt_titles?.length);
 }
 
 /** Repair legacy imports too, without touching progress, scores, or watch state. */
@@ -25,6 +25,7 @@ export function hydrateImportedEntries(): Promise<number> {
         image_url: item.images.cover || entry.image_url,
         banner_url: item.images.banner,
         duration: item.duration,
+        alt_titles: altTitles(item),
         anilist_id: item.anilist_id,
         anilist_score: item.anilist_score,
         episodes: entry.episodes ?? item.episodes,

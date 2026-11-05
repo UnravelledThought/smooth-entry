@@ -11,6 +11,7 @@ import {
   useEntries, updateEntry, deleteEntry, toggleFavorite, bulkSetStatus, bulkDelete,
   entryRouteId, type WatchStatus, type LocalEntry,
 } from "@/lib/local-store";
+import { entryMatches } from "@/lib/local-store";
 
 export const Route = createFileRoute("/list")({
   head: () => ({
@@ -64,7 +65,7 @@ function ListPage() {
 
   const filtered = useMemo(() => {
     const qs = query.trim().toLowerCase();
-    const out = qs ? list.filter((e) => e.title.toLowerCase().includes(qs)) : list.slice();
+    const out = qs ? list.filter((e) => entryMatches(e, qs)) : list.slice();
     const snapshots = new Map(sortSnapshot.map((entry) => [entry.id, entry]));
     out.sort((a, b) => {
       const savedA = snapshots.get(a.id) ?? a;

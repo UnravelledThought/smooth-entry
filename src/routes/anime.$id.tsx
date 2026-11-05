@@ -47,6 +47,7 @@ function AnimeDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   const meta = useQuery({
@@ -74,7 +75,11 @@ function AnimeDetail() {
       await qc.invalidateQueries({ queryKey: ["anime", id] });
       await qc.invalidateQueries({ queryKey: ["mal", anime?.mal_id] });
       await qc.invalidateQueries({ queryKey: ["episodes", anime?.mal_id] });
+      setRefreshMsg("Updated");
+    } catch {
+      setRefreshMsg("Couldn't update — try again later");
     } finally {
+      window.setTimeout(() => setRefreshMsg(null), 2500);
       setRefreshing(false);
     }
   };
@@ -117,7 +122,7 @@ function AnimeDetail() {
             className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
             <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Refreshing…" : `Refresh · ${syncedLabel(meta.data?.last_synced_at ?? null)}`}
+            {refreshing ? "Refreshing…" : refreshMsg ?? `Refresh · ${syncedLabel(meta.data?.last_synced_at ?? null)}`}
           </button>
         </div>
 
@@ -215,12 +220,21 @@ function AnimeDetail() {
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={() => addEntry({ ...anime, mal: malData })}
-                  className="accent-bg inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold transition-all hover:gap-3"
-                >
-                  <Plus className="h-4 w-4" /> Add to list
-                </button>
+                <>
+                  <button
+                    onClick={() => addEntry({ ...anime, mal: malData })}
+                    className="accent-bg inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold transition-all hover:gap-3"
+                  >
+                    <Plus className="h-4 w-4" /> Add to list
+                  </button>
+                  <button
+                    onClick={() => toggleFavorite(addEntry({ ...anime, mal: malData }))}
+                    title="Adds it to your list as Plan to watch and marks it as a favorite"
+                    className="inline-flex items-center gap-2 rounded-md border border-border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                  >
+                    <Heart className="h-4 w-4" /> Favorite
+                  </button>
+                </>
               )}
               <Link to="/list" className="inline-flex items-center gap-2 rounded-md border border-border px-5 py-2.5 text-sm">
                 View my list
