@@ -49,10 +49,9 @@ function Settings() {
   const synced = useRef(false);
 
   useEffect(() => {
-    if (!synced.current) {
-      setColor(settings.accent_color);
-      synced.current = true;
-    }
+    // Follow external changes too (e.g. restoring a backup).
+    setColor(settings.accent_color);
+    synced.current = true;
   }, [settings.accent_color]);
 
   // Live preview
