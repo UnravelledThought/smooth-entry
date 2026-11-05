@@ -6,6 +6,7 @@ import { Palette, Download, Upload, Save, Trash2 } from "lucide-react";
 import {
   useSettings, setAccentColor, getEntriesSnapshot, exportBackup, importBackup, clearAll,
 } from "@/lib/local-store";
+import { isTooDark, readableAccent } from "@/lib/accent";
 import { toMalXml, parseMalXml, importEntries, malExportable } from "@/lib/mal-io";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -56,7 +57,7 @@ function Settings() {
 
   // Live preview
   useEffect(() => {
-    document.documentElement.style.setProperty("--accent-color", color);
+    document.documentElement.style.setProperty("--accent-color", readableAccent(color));
   }, [color]);
 
   // Debounced save
@@ -97,6 +98,11 @@ function Settings() {
             <Palette className="h-4 w-4" style={{ color }} />
           </button>
         </div>
+        {isTooDark(color) && (
+          <p className="text-xs text-muted-foreground">
+            This color is hard to read on black, so a lighter shade (<span className="accent-text font-medium">{readableAccent(color).toUpperCase()}</span>) is used instead.
+          </p>
+        )}
         {showCustom && (
           <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center">
             <div className="accent-picker w-full max-w-[220px]">
@@ -160,14 +166,29 @@ function BackupSection() {
     }
   };
 
+  const [pendingRestore, setPendingRestore] = useState<string | null>(null);
+
   const importJson = async (file: File) => {
     try {
-      const n = importBackup(await file.text());
+      const text = await file.text();
+      JSON.parse(text);
+      setPendingRestore(text);
+    } catch {
+      setMsg("Restore failed: that file isn't a valid backup.");
+    } finally {
+      if (jsonRef.current) jsonRef.current.value = "";
+    }
+  };
+
+  const confirmRestore = () => {
+    if (!pendingRestore) return;
+    try {
+      const n = importBackup(pendingRestore);
       setMsg(`Restored ${n} entries from backup.`);
     } catch (e: any) {
       setMsg(`Restore failed: ${e.message}`);
     } finally {
-      if (jsonRef.current) jsonRef.current.value = "";
+      setPendingRestore(null);
     }
   };
 
@@ -237,6 +258,21 @@ function BackupSection() {
           <Trash2 className="h-3.5 w-3.5" /> Clear all data
         </button>
       </div>
+
+      <AlertDialog open={pendingRestore != null} onOpenChange={(o) => { if (!o) setPendingRestore(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace your list with this backup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current list ({getEntriesSnapshot().length} entries), progress and ratings will be replaced by what's in the backup file. Export a backup first if you want to keep them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRestore}>Replace list</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmWipe} onOpenChange={setConfirmWipe}>
         <AlertDialogContent>
