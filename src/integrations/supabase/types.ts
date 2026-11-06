@@ -67,13 +67,18 @@ export type Database = {
       }
       watchlist_entries: {
         Row: {
+          alt_titles: string[]
+          anilist_id: number | null
+          anilist_score: number | null
+          banner_url: string | null
           created_at: string
+          duration: number | null
           episodes: number | null
           id: string
           image_url: string
           is_pinned: boolean
           is_shared: boolean
-          mal_id: number
+          mal_id: number | null
           mal_score: number | null
           personal_score: number | null
           progress: number
@@ -84,13 +89,18 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          alt_titles?: string[]
+          anilist_id?: number | null
+          anilist_score?: number | null
+          banner_url?: string | null
           created_at?: string
+          duration?: number | null
           episodes?: number | null
           id?: string
           image_url: string
           is_pinned?: boolean
           is_shared?: boolean
-          mal_id: number
+          mal_id?: number | null
           mal_score?: number | null
           personal_score?: number | null
           progress?: number
@@ -101,13 +111,18 @@ export type Database = {
           user_id: string
         }
         Update: {
+          alt_titles?: string[]
+          anilist_id?: number | null
+          anilist_score?: number | null
+          banner_url?: string | null
           created_at?: string
+          duration?: number | null
           episodes?: number | null
           id?: string
           image_url?: string
           is_pinned?: boolean
           is_shared?: boolean
-          mal_id?: number
+          mal_id?: number | null
           mal_score?: number | null
           personal_score?: number | null
           progress?: number
@@ -127,7 +142,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      watch_status: "watching" | "completed" | "plan" | "dropped"
+      watch_status: "watching" | "completed" | "plan" | "dropped" | "onhold"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -255,7 +270,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      watch_status: ["watching", "completed", "plan", "dropped"],
+      watch_status: ["watching", "completed", "plan", "dropped", "onhold"],
     },
   },
 } as const
