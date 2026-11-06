@@ -110,7 +110,7 @@ export function parseMalXml(xml: string): ParsedEntry[] {
 
 export async function importEntries(parsed: ParsedEntry[]): Promise<{ imported: number; skipped: number; missingArtwork: number }> {
   if (parsed.length === 0) return { imported: 0, skipped: 0, missingArtwork: 0 };
-  const result = addManyEntries(
+  const result = await addManyEntries(
     parsed.map((p) => ({
       mal_id: p.mal_id,
       title: p.title,

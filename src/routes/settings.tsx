@@ -2,8 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { HexColorPicker, HexColorInput } from "react-colorful";
 import { Layout } from "@/components/Layout";
-import { Palette, Download, Upload, Save, Trash2 } from "lucide-react";
+import { Palette, Download, Upload, Save, Trash2, Camera } from "lucide-react";
+import { toast } from "sonner";
+import { Avatar } from "@/components/Avatar";
 import {
+  useProfile, updateProfile, uploadAvatar,
   useSettings, setAccentColor, getEntriesSnapshot, exportBackup, importBackup, clearAll,
 } from "@/lib/local-store";
 import { isTooDark, readableAccent } from "@/lib/accent";
@@ -72,9 +75,11 @@ function Settings() {
       <div>
         <h1 className="font-display text-3xl sm:text-4xl font-semibold">Settings</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Everything you track is stored in this browser only.
+          Saved to your account, so it follows you to any device.
         </p>
       </div>
+
+      <ProfileSection />
 
       <section className="space-y-4">
         <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Accent color</h2>
@@ -130,6 +135,63 @@ function Settings() {
   );
 }
 
+function ProfileSection() {
+  const profile = useProfile();
+  const [bio, setBio] = useState(profile?.bio ?? "");
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { setBio(profile?.bio ?? ""); }, [profile?.bio]);
+  if (!profile) return null;
+
+  const onFile = async (f: File) => {
+    setBusy(true);
+    try { await uploadAvatar(f); toast.success("Profile picture updated."); }
+    catch (e: any) { toast.error(e.message ?? "Upload failed."); }
+    finally { setBusy(false); if (fileRef.current) fileRef.current.value = ""; }
+  };
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Profile</h2>
+      <div className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-5 sm:flex-row">
+        <div className="flex flex-col items-center gap-3">
+          <Avatar profile={profile} className="h-24 w-24 text-2xl" />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-foreground hover:text-background disabled:opacity-50"
+          >
+            <Camera className="h-3.5 w-3.5" /> {busy ? "Uploading…" : "Change picture"}
+          </button>
+          <span className="text-[10px] text-muted-foreground">JPG, PNG or GIF · up to 25 MB</span>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
+        </div>
+        <div className="flex-1 space-y-2">
+          <div className="text-lg font-semibold">{profile.username}</div>
+          <textarea
+            value={bio}
+            maxLength={300}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="A few words about you"
+            className="h-24 w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+          />
+          <button
+            onClick={async () => {
+              try { await updateProfile({ bio: bio.trim() }); toast.success("Bio saved."); }
+              catch { toast.error("Couldn't save your bio."); }
+            }}
+            disabled={bio === (profile.bio ?? "")}
+            className="rounded-md accent-bg px-4 py-1.5 text-sm font-medium disabled:opacity-40"
+          >
+            Save bio
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function BackupSection() {
   const [msg, setMsg] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
@@ -179,10 +241,10 @@ function BackupSection() {
     }
   };
 
-  const confirmRestore = () => {
+  const confirmRestore = async () => {
     if (!pendingRestore) return;
     try {
-      const n = importBackup(pendingRestore);
+      const n = await importBackup(pendingRestore);
       setMsg(`Restored ${n} entries from backup.`);
     } catch (e: any) {
       setMsg(`Restore failed: ${e.message}`);
@@ -193,9 +255,9 @@ function BackupSection() {
 
   const [confirmWipe, setConfirmWipe] = useState(false);
 
-  const wipe = () => {
-    clearAll();
-    setMsg("All local data cleared.");
+  const wipe = async () => {
+    try { await clearAll(); setMsg("Your list was cleared."); }
+    catch { setMsg("Couldn't clear your list. Try again."); }
   };
 
   return (

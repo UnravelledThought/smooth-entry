@@ -1,7 +1,54 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Bookmark, CalendarClock, Compass, Search, Settings as SettingsIcon, BarChart3 } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { Bookmark, CalendarClock, Compass, Search, Settings as SettingsIcon, BarChart3, User, LogOut } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useSession, signOut, profileSlug } from "@/lib/local-store";
+import { Avatar } from "./Avatar";
 import { ImportMetadataSync } from "./ImportMetadataSync";
 import { Logo } from "./Logo";
+
+function AccountMenu() {
+  const { ready, profile, userId } = useSession();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  if (!ready) return <span className="h-9 w-9" />;
+  if (!userId || !profile) {
+    return (
+      <Link to="/auth" className="rounded-md accent-bg px-3 py-1.5 text-sm font-medium">
+        Sign in
+      </Link>
+    );
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger aria-label="Account" className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-foreground">
+        <Avatar profile={profile} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuLabel className="truncate">{profile.username}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/u/$slug" params={{ slug: profileSlug(profile) }}><User className="mr-2 h-3.5 w-3.5" /> Profile</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings"><SettingsIcon className="mr-2 h-3.5 w-3.5" /> Settings</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={async () => {
+            await qc.cancelQueries();
+            await signOut();
+            navigate({ to: "/auth", replace: true });
+          }}
+        >
+          <LogOut className="mr-2 h-3.5 w-3.5" /> Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -40,15 +87,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <Link
-            to="/settings"
-            aria-label="Settings"
-            className={`grid h-9 w-9 place-items-center rounded-md border border-border transition-colors ${
-              path === "/settings" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <SettingsIcon className="h-4 w-4" />
-          </Link>
+          <AccountMenu />
         </div>
       </header>
       <main className="flex-1">{children}</main>
