@@ -47,6 +47,8 @@ export interface Profile {
 export interface LocalState {
   version: 1;
   ready: boolean;
+  /** True when the list couldn't be loaded (shown entries are not authoritative). */
+  loadError?: boolean;
   userId: string | null;
   profile: Profile | null;
   entries: LocalEntry[];
@@ -88,22 +90,53 @@ function toRow(e: Partial<LocalEntry>) {
   return r;
 }
 
+/** Per-entry write counter so an older failed write never undoes a newer edit. */
+const writeSeq = new Map<string, number>();
+function bump(ids: string[]) { const m = new Map<string, number>(); for (const id of ids) { const n = (writeSeq.get(id) ?? 0) + 1; writeSeq.set(id, n); m.set(id, n); } return m; }
+
+/** Restore the given pre-change entries (and re-add deleted ones) unless a newer write touched them. */
+function rollback(before: LocalEntry[], seq: Map<string, number>, err: unknown, what = "that change") {
+  console.error(err);
+  const live = before.filter((b) => writeSeq.get(b.id) === seq.get(b.id));
+  if (live.length) {
+    const byId = new Map(live.map((b) => [b.id, b]));
+    const present = new Set(state.entries.map((e) => e.id));
+    const restored = state.entries.map((e) => byId.get(e.id) ?? e);
+    const readd = live.filter((b) => !present.has(b.id));
+    commit({ ...state, entries: [...readd, ...restored].sort((a, b) => b.created_at.localeCompare(a.created_at)) });
+  }
+  toast.error(`Couldn't save ${what}. It has been undone.`);
+}
+
 function fail(err: unknown) {
   console.error(err);
-  toast.error("Couldn't save that change. Reloading your list.");
-  if (state.userId) void loadUser(state.userId);
+  toast.error("Couldn't save that change.");
 }
 
 /* ---------- session ---------- */
 
 async function loadUser(userId: string) {
-  const [{ data: profile }, { data: rows }] = await Promise.all([
-    supabase.from("profiles").select("id, uid, username, bio, avatar_url, accent_color").eq("id", userId).maybeSingle(),
-    supabase.from("watchlist_entries").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-  ]);
+  let res;
+  try {
+    res = await Promise.all([
+      supabase.from("profiles").select("id, uid, username, bio, avatar_url, accent_color").eq("id", userId).maybeSingle(),
+      supabase.from("watchlist_entries").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    ]);
+  } catch (e) { res = [{ data: null, error: e }, { data: null, error: e }] as const; }
   if (state.userId !== userId) return;
+  const [{ data: profile, error: pErr }, { data: rows, error: rErr }] = res;
+  if (pErr || rErr) {
+    console.error(pErr ?? rErr);
+    commit({ ...state, ready: true, loadError: true });
+    toast.error("Couldn't load your list.", {
+      duration: Infinity, id: "load-error",
+      action: { label: "Retry", onClick: () => { void loadUser(userId); } },
+    });
+    return;
+  }
+  toast.dismiss("load-error");
   commit({
-    ...state, ready: true, profile: (profile as Profile) ?? null,
+    ...state, ready: true, loadError: false, profile: (profile as Profile) ?? null,
     entries: (rows ?? []).map(fromRow),
     settings: { accent_color: profile?.accent_color || DEFAULT_ACCENT },
   });
@@ -119,7 +152,9 @@ export function startSession() {
     commit({ ...EMPTY, userId: uid, ready: false });
     void loadUser(uid);
   };
-  supabase.auth.getSession().then(({ data }) => apply(data.session?.user.id ?? null));
+  supabase.auth.getSession()
+    .then(({ data }) => apply(data.session?.user.id ?? null))
+    .catch((e) => { console.error(e); apply(null); });
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "INITIAL_SESSION") apply(session?.user.id ?? null);
   });
@@ -140,7 +175,8 @@ const emailFor = (u: string) => `${u.trim().toLowerCase()}@${SYNTHETIC_DOMAIN}`;
 export async function signUp(username: string, password: string) {
   if (!USERNAME_RE.test(username)) throw new Error("Username must be 3–20 letters, numbers or _.");
   const p = passwordProblem(password); if (p) throw new Error(p);
-  const { data: taken } = await supabase.from("profiles").select("id").ilike("username", username).maybeSingle();
+  const { data: taken, error: tErr } = await supabase.from("profiles").select("id").ilike("username", username).maybeSingle();
+  if (tErr) throw new Error("Couldn't check that username. Try again.");
   if (taken) throw new Error("That username is taken.");
   const { error } = await supabase.auth.signUp({
     email: emailFor(username), password, options: { data: { username } },
