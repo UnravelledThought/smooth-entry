@@ -408,7 +408,10 @@ export async function importBackup(json: string): Promise<number> {
       : "Import failed. Your previous list was restored.");
   }
   commit({ ...state, entries });
-  if (parsed.settings?.accent_color) setAccentColor(parsed.settings.accent_color);
+  try {
+    const accent = JSON.parse(json)?.settings?.accent_color;
+    if (typeof accent === "string" && /^#[0-9a-f]{6}$/i.test(accent)) setAccentColor(accent);
+  } catch { /* already validated */ }
   return entries.length;
 }
 
