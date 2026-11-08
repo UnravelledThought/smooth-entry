@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { displayTitle, type Anime } from "./anime/types";
+import { clampProgress, clampScore, cleanEpisodes, cleanId, cleanStatus, dedupeAnime, sameAnime } from "./entry-rules";
 
 export type WatchStatus = "watching" | "completed" | "onhold" | "plan" | "dropped";
 
@@ -47,6 +48,8 @@ export interface Profile {
 export interface LocalState {
   version: 1;
   ready: boolean;
+  /** True when the list couldn't be loaded (shown entries are not authoritative). */
+  loadError?: boolean;
   userId: string | null;
   profile: Profile | null;
   entries: LocalEntry[];
@@ -88,22 +91,53 @@ function toRow(e: Partial<LocalEntry>) {
   return r;
 }
 
+/** Per-entry write counter so an older failed write never undoes a newer edit. */
+const writeSeq = new Map<string, number>();
+function bump(ids: string[]) { const m = new Map<string, number>(); for (const id of ids) { const n = (writeSeq.get(id) ?? 0) + 1; writeSeq.set(id, n); m.set(id, n); } return m; }
+
+/** Restore the given pre-change entries (and re-add deleted ones) unless a newer write touched them. */
+function rollback(before: LocalEntry[], seq: Map<string, number>, err: unknown, what = "that change") {
+  console.error(err);
+  const live = before.filter((b) => writeSeq.get(b.id) === seq.get(b.id));
+  if (live.length) {
+    const byId = new Map(live.map((b) => [b.id, b]));
+    const present = new Set(state.entries.map((e) => e.id));
+    const restored = state.entries.map((e) => byId.get(e.id) ?? e);
+    const readd = live.filter((b) => !present.has(b.id));
+    commit({ ...state, entries: [...readd, ...restored].sort((a, b) => b.created_at.localeCompare(a.created_at)) });
+  }
+  toast.error(`Couldn't save ${what}. It has been undone.`);
+}
+
 function fail(err: unknown) {
   console.error(err);
-  toast.error("Couldn't save that change. Reloading your list.");
-  if (state.userId) void loadUser(state.userId);
+  toast.error("Couldn't save that change.");
 }
 
 /* ---------- session ---------- */
 
 async function loadUser(userId: string) {
-  const [{ data: profile }, { data: rows }] = await Promise.all([
-    supabase.from("profiles").select("id, uid, username, bio, avatar_url, accent_color").eq("id", userId).maybeSingle(),
-    supabase.from("watchlist_entries").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-  ]);
+  let res;
+  try {
+    res = await Promise.all([
+      supabase.from("profiles").select("id, uid, username, bio, avatar_url, accent_color").eq("id", userId).maybeSingle(),
+      supabase.from("watchlist_entries").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+    ]);
+  } catch (e) { res = [{ data: null, error: e }, { data: null, error: e }] as const; }
   if (state.userId !== userId) return;
+  const [{ data: profile, error: pErr }, { data: rows, error: rErr }] = res;
+  if (pErr || rErr) {
+    console.error(pErr ?? rErr);
+    commit({ ...state, ready: true, loadError: true });
+    toast.error("Couldn't load your list.", {
+      duration: Infinity, id: "load-error",
+      action: { label: "Retry", onClick: () => { void loadUser(userId); } },
+    });
+    return;
+  }
+  toast.dismiss("load-error");
   commit({
-    ...state, ready: true, profile: (profile as Profile) ?? null,
+    ...state, ready: true, loadError: false, profile: (profile as Profile) ?? null,
     entries: (rows ?? []).map(fromRow),
     settings: { accent_color: profile?.accent_color || DEFAULT_ACCENT },
   });
@@ -119,7 +153,9 @@ export function startSession() {
     commit({ ...EMPTY, userId: uid, ready: false });
     void loadUser(uid);
   };
-  supabase.auth.getSession().then(({ data }) => apply(data.session?.user.id ?? null));
+  supabase.auth.getSession()
+    .then(({ data }) => apply(data.session?.user.id ?? null))
+    .catch((e) => { console.error(e); apply(null); });
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "INITIAL_SESSION") apply(session?.user.id ?? null);
   });
@@ -140,7 +176,8 @@ const emailFor = (u: string) => `${u.trim().toLowerCase()}@${SYNTHETIC_DOMAIN}`;
 export async function signUp(username: string, password: string) {
   if (!USERNAME_RE.test(username)) throw new Error("Username must be 3–20 letters, numbers or _.");
   const p = passwordProblem(password); if (p) throw new Error(p);
-  const { data: taken } = await supabase.from("profiles").select("id").ilike("username", username).maybeSingle();
+  const { data: taken, error: tErr } = await supabase.from("profiles").select("id").ilike("username", username).maybeSingle();
+  if (tErr) throw new Error("Couldn't check that username. Try again.");
   if (taken) throw new Error("That username is taken.");
   const { error } = await supabase.auth.signUp({
     email: emailFor(username), password, options: { data: { username } },
@@ -230,9 +267,7 @@ export function entryMatches(e: Pick<LocalEntry, "title" | "alt_titles">, query:
 }
 
 export function addEntry(anime: Anime, status: WatchStatus = "plan"): string {
-  const exists = state.entries.find((e) =>
-    (anime.mal_id != null && e.mal_id === anime.mal_id) ||
-    (anime.anilist_id != null && e.anilist_id === anime.anilist_id));
+  const exists = state.entries.find((e) => sameAnime(e, anime));
   if (exists) return exists.id;
   const uid = requireUser(); if (!uid) return "";
   const entry: LocalEntry = {
@@ -242,15 +277,31 @@ export function addEntry(anime: Anime, status: WatchStatus = "plan"): string {
     mal_score: anime.mal?.score ?? null, anilist_score: anime.anilist_score ?? null, is_favorite: false,
     created_at: now(), updated_at: now(),
   };
+  const seq = bump([entry.id]);
   commit({ ...state, entries: [entry, ...state.entries] });
-  supabase.from("watchlist_entries").insert({ ...toRow(entry), user_id: uid } as any).then(({ error }) => error && fail(error));
+  supabase.from("watchlist_entries").insert({ ...toRow(entry), user_id: uid } as any).then(({ error }) => {
+    if (!error) return;
+    console.error(error);
+    if (writeSeq.get(entry.id) === seq.get(entry.id)) commit({ ...state, entries: state.entries.filter((e) => e.id !== entry.id) });
+    toast.error("Couldn't add that anime. Try again.");
+  });
   return entry.id;
 }
 
 export function updateEntry(id: string, patch: Partial<LocalEntry>) {
   if (!requireUser()) return;
-  commit({ ...state, entries: state.entries.map((e) => (e.id === id ? { ...e, ...patch, updated_at: now() } : e)) });
-  supabase.from("watchlist_entries").update(toRow(patch) as any).eq("id", id).then(({ error }) => error && fail(error));
+  const before = state.entries.find((e) => e.id === id);
+  if (!before) return;
+  const clean: Partial<LocalEntry> = { ...patch };
+  const episodes = "episodes" in clean ? cleanEpisodes(clean.episodes) : before.episodes;
+  if ("episodes" in clean) clean.episodes = episodes;
+  if ("progress" in clean || "episodes" in clean) clean.progress = clampProgress(clean.progress ?? before.progress, episodes);
+  if ("personal_score" in clean) clean.personal_score = clampScore(clean.personal_score);
+  if ("status" in clean) clean.status = cleanStatus(clean.status);
+  const seq = bump([id]);
+  commit({ ...state, entries: state.entries.map((e) => (e.id === id ? { ...e, ...clean, updated_at: now() } : e)) });
+  supabase.from("watchlist_entries").update(toRow(clean) as any).eq("id", id)
+    .then(({ error }) => error && rollback([before], seq, error));
 }
 
 export function deleteEntry(id: string) { bulkDelete([id]); }
@@ -258,15 +309,22 @@ export function deleteEntry(id: string) { bulkDelete([id]); }
 export function bulkSetStatus(ids: string[], status: WatchStatus) {
   if (!requireUser() || ids.length === 0) return;
   const set = new Set(ids);
-  commit({ ...state, entries: state.entries.map((e) => (set.has(e.id) ? { ...e, status, updated_at: now() } : e)) });
-  supabase.from("watchlist_entries").update({ status }).in("id", ids).then(({ error }) => error && fail(error));
+  const before = state.entries.filter((e) => set.has(e.id));
+  const seq = bump(ids);
+  const s = cleanStatus(status);
+  commit({ ...state, entries: state.entries.map((e) => (set.has(e.id) ? { ...e, status: s, updated_at: now() } : e)) });
+  supabase.from("watchlist_entries").update({ status: s }).in("id", ids)
+    .then(({ error }) => error && rollback(before, seq, error, `the status change for ${ids.length} anime`));
 }
 
 export function bulkDelete(ids: string[]) {
   if (!requireUser() || ids.length === 0) return;
   const set = new Set(ids);
+  const before = state.entries.filter((e) => set.has(e.id));
+  const seq = bump(ids);
   commit({ ...state, entries: state.entries.filter((e) => !set.has(e.id)) });
-  supabase.from("watchlist_entries").delete().in("id", ids).then(({ error }) => error && fail(error));
+  supabase.from("watchlist_entries").delete().in("id", ids)
+    .then(({ error }) => error && rollback(before, seq, error, ids.length > 1 ? `deleting ${ids.length} anime` : "that delete"));
 }
 
 export function toggleFavorite(id: string) {
@@ -278,14 +336,21 @@ export function getEntriesSnapshot(): LocalEntry[] { return state.entries; }
 
 export type ImportRow = Partial<LocalEntry> & { mal_id: number; title: string };
 
-function normalizeNew(r: Partial<LocalEntry>): LocalEntry {
+const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
+const validDate = (v: unknown) => (typeof v === "string" && !Number.isNaN(Date.parse(v)) ? v : now());
+
+function normalizeNew(raw: unknown): LocalEntry {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const episodes = cleanEpisodes(r.episodes);
+  const dur = Number(r.duration);
   return {
-    id: newId(), mal_id: r.mal_id ?? null, anilist_id: r.anilist_id ?? null, title: r.title ?? "Untitled",
-    alt_titles: r.alt_titles ?? [], image_url: r.image_url ?? "", banner_url: r.banner_url ?? null,
-    duration: r.duration ?? null, episodes: r.episodes ?? null, status: r.status ?? "plan",
-    progress: Number(r.progress) || 0, personal_score: r.personal_score ?? null, mal_score: r.mal_score ?? null,
-    anilist_score: r.anilist_score ?? null, is_favorite: !!r.is_favorite,
-    created_at: r.created_at ?? now(), updated_at: now(),
+    id: newId(), mal_id: cleanId(r.mal_id), anilist_id: cleanId(r.anilist_id), title: str(r.title) ?? "Untitled",
+    alt_titles: Array.isArray(r.alt_titles) ? r.alt_titles.filter((t): t is string => typeof t === "string") : [],
+    image_url: str(r.image_url) ?? "", banner_url: str(r.banner_url),
+    duration: Number.isFinite(dur) && dur > 0 ? Math.round(dur) : null, episodes, status: cleanStatus(r.status),
+    progress: clampProgress(r.progress, episodes), personal_score: clampScore(r.personal_score),
+    mal_score: clampScore(r.mal_score), anilist_score: clampScore(r.anilist_score), is_favorite: !!r.is_favorite,
+    created_at: validDate(r.created_at), updated_at: now(),
   };
 }
 
@@ -299,13 +364,7 @@ async function insertMany(uid: string, entries: LocalEntry[]) {
 
 export async function addManyEntries(rows: ImportRow[]): Promise<{ imported: number; skipped: number }> {
   const uid = requireUser(); if (!uid) return { imported: 0, skipped: rows.length };
-  const existing = new Set(state.entries.map((e) => e.mal_id).filter((v): v is number => v != null));
-  const fresh: LocalEntry[] = [];
-  for (const r of rows) {
-    if (existing.has(r.mal_id)) continue;
-    existing.add(r.mal_id);
-    fresh.push(normalizeNew(r));
-  }
+  const fresh = dedupeAnime(rows.map(normalizeNew).filter((e) => e.mal_id != null || e.anilist_id != null), state.entries);
   if (fresh.length) {
     await insertMany(uid, fresh);
     commit({ ...state, entries: [...fresh, ...state.entries] });
@@ -317,16 +376,42 @@ export function exportBackup(): string {
   return JSON.stringify({ version: 1, entries: state.entries, settings: state.settings }, null, 2);
 }
 
+/** Validates a backup file fully before anything is written. */
+export function parseBackup(json: string): LocalEntry[] {
+  let parsed: any;
+  try { parsed = JSON.parse(json); } catch { throw new Error("That file isn't valid JSON."); }
+  if (!parsed || !Array.isArray(parsed.entries)) throw new Error("Not an AniTrack backup file.");
+  const entries = parsed.entries.map(normalizeNew);
+  const bad = entries.filter((e: LocalEntry) => e.mal_id == null && e.anilist_id == null).length;
+  if (bad) throw new Error(`${bad} entr${bad === 1 ? "y has" : "ies have"} no anime ID. Nothing was changed.`);
+  return dedupeAnime(entries);
+}
+
 export async function importBackup(json: string): Promise<number> {
   const uid = requireUser(); if (!uid) return 0;
-  const parsed = JSON.parse(json);
-  if (!Array.isArray(parsed.entries)) throw new Error("Not an AniTrack backup file.");
-  const entries = parsed.entries.map(normalizeNew);
+  const entries = parseBackup(json);
+  // Keep a copy of the current list from the server so a failed import can be put back.
+  const { data: oldRows, error: rErr } = await supabase.from("watchlist_entries").select("*").eq("user_id", uid);
+  if (rErr || !oldRows) throw new Error("Couldn't reach your list. Nothing was changed.");
   const { error } = await supabase.from("watchlist_entries").delete().eq("user_id", uid);
-  if (error) throw error;
-  await insertMany(uid, entries);
+  if (error) throw new Error("Couldn't replace your list. Nothing was changed.");
+  try {
+    await insertMany(uid, entries);
+  } catch (e) {
+    console.error(e);
+    await supabase.from("watchlist_entries").delete().eq("user_id", uid);
+    const { error: restoreErr } = oldRows.length
+      ? await supabase.from("watchlist_entries").insert(oldRows as any) : { error: null };
+    await loadUser(uid);
+    throw new Error(restoreErr
+      ? "Import failed and your old list couldn't be fully restored. Re-import your own backup."
+      : "Import failed. Your previous list was restored.");
+  }
   commit({ ...state, entries });
-  if (parsed.settings?.accent_color) setAccentColor(parsed.settings.accent_color);
+  try {
+    const accent = JSON.parse(json)?.settings?.accent_color;
+    if (typeof accent === "string" && /^#[0-9a-f]{6}$/i.test(accent)) setAccentColor(accent);
+  } catch { /* already validated */ }
   return entries.length;
 }
 
