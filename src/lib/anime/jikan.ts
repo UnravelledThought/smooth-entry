@@ -9,6 +9,17 @@ import type { Episode, MalDetails } from "./types";
 
 const BASE = "https://api.jikan.moe/v4";
 
+export const DEFAULT_JIKAN_COOLDOWN_MS = 60_000;
+let cooldownMs = DEFAULT_JIKAN_COOLDOWN_MS;
+
+/** Configure outage backoff without changing the short request timeout. */
+export function configureJikan(options: { cooldownMs: number }): void {
+  if (!Number.isFinite(options.cooldownMs) || options.cooldownMs < 0) {
+    throw new RangeError("Jikan cooldown must be a non-negative number of milliseconds");
+  }
+  cooldownMs = options.cooldownMs;
+}
+
 /* Serialize requests and keep a gap between them — Jikan allows ~3 req/s. */
 const MIN_GAP_MS = 400;
 let chain: Promise<unknown> = Promise.resolve();
@@ -29,7 +40,7 @@ function queued<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /** One retry with backoff, then report unavailable. No loops. */
-/* Circuit breaker: after a network/5xx failure, skip MAL for a minute so the UI doesn't hang. */
+/* Circuit breaker: skip MAL briefly after network/5xx failures; default one minute. */
 let downUntil = 0;
 
 async function get<T>(path: string): Promise<T> {
@@ -41,7 +52,7 @@ async function get<T>(path: string): Promise<T> {
       try {
         const res = await fetch(`${BASE}${path}`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) });
         if (res.status === 429 && attempt === 0) continue;
-        if (res.status >= 500) downUntil = Date.now() + 60_000;
+        if (res.status >= 500) downUntil = Date.now() + cooldownMs;
         if (res.status === 429 || res.status >= 500) {
           throw new SourceUnavailableError("jikan", `MyAnimeList responded ${res.status}`);
         }
@@ -50,7 +61,7 @@ async function get<T>(path: string): Promise<T> {
         return (await res.json()) as T;
       } catch (err) {
         if (err instanceof SourceUnavailableError) throw err;
-        downUntil = Date.now() + 60_000;
+        downUntil = Date.now() + cooldownMs;
         throw new SourceUnavailableError("jikan", `Network error: ${String(err)}`);
       }
     }
