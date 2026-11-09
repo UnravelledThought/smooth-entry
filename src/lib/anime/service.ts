@@ -21,6 +21,7 @@ import type { Anime, Episode, MalDetails, SourceResult } from "./types";
 export { SourceUnavailableError };
 export * from "./types";
 export { clearAnimeCache } from "./cache";
+export { configureJikan, DEFAULT_JIKAN_COOLDOWN_MS } from "./jikan";
 
 function ok<T>(data: T, rec: CacheRecord<unknown> | null, stale = false): SourceResult<T> {
   return { data, status: "ok", stale, last_synced_at: rec?.last_synced_at ?? null };
@@ -31,9 +32,9 @@ function ok<T>(data: T, rec: CacheRecord<unknown> | null, stale = false): Source
  * cached data, serve that and flag it — cached AniList data keeps working while
  * the source is down.
  */
-async function cached<T>(key: string, ttl: number, fetcher: () => Promise<T>): Promise<SourceResult<T>> {
+async function cached<T>(key: string, ttl: number, fetcher: () => Promise<T>, force = false): Promise<SourceResult<T>> {
   const rec = cacheRead<T>(key);
-  if (rec && !isStale(rec, ttl)) return ok(rec.data, rec);
+  if (!force && rec && !isStale(rec, ttl)) return ok(rec.data, rec);
   try {
     const data = await fetcher();
     return ok(data, cacheWrite(key, data));
@@ -102,11 +103,7 @@ export async function getMalDetails(
   if (!malId) return { data: null, status: "ok", stale: false, last_synced_at: null };
   const key = `mal:${malId}`;
   try {
-    if (opts.force) {
-      const data = await jikanDetails(malId);
-      return ok(data, cacheWrite(key, data));
-    }
-    return await cached(key, TTL.mal, () => jikanDetails(malId));
+    return await cached(key, TTL.mal, () => jikanDetails(malId), opts.force);
   } catch {
     return { data: null, status: "unavailable", stale: false, last_synced_at: null };
   }
@@ -116,14 +113,11 @@ export async function getEpisodes(
   anime: Pick<Anime, "mal_id" | "internal_id">,
   opts: { force?: boolean } = {},
 ): Promise<SourceResult<Episode[]>> {
-  if (!anime.mal_id) return { data: [], status: "unavailable", stale: false, last_synced_at: null };
-  const key = `episodes:${anime.mal_id}`;
+  const malId = anime.mal_id;
+  if (!malId) return { data: [], status: "unavailable", stale: false, last_synced_at: null };
+  const key = `episodes:${malId}`;
   try {
-    if (opts.force) {
-      const data = await jikanEpisodes(anime.mal_id, anime.internal_id);
-      return ok(data, cacheWrite(key, data));
-    }
-    return await cached(key, TTL.episodes, () => jikanEpisodes(anime.mal_id!, anime.internal_id));
+    return await cached(key, TTL.episodes, () => jikanEpisodes(malId, anime.internal_id), opts.force);
   } catch {
     return { data: [], status: "unavailable", stale: false, last_synced_at: null };
   }

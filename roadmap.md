@@ -6,3 +6,4 @@
 - [x] Project audit fixes: confirm dialog before removing from list on anime page, MAL XML export skips AniList-only titles, hero banner resumes auto-play after touch, styled confirm for Clear all data.
 - [x] AniTrack logo as SVG (two options, then header + tab icon)
 - [x] Bring back accounts: username login, cloud list, profile pics (JPG/PNG/GIF up to 25 MB), bio, public profiles at /u/name.uid
+- [ ] Preserve accepted source decisions, configure the 60-second Jikan cooldown, and verify cached MAL data survives outages and failed refreshes.
