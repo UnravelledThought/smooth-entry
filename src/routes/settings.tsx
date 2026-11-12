@@ -244,8 +244,8 @@ function BackupSection() {
   const confirmRestore = async () => {
     if (!pendingRestore) return;
     try {
-      const n = await importBackup(pendingRestore);
-      setMsg(`Restored ${n} entries from backup.`);
+      const res = await importBackup(pendingRestore);
+      setMsg(`Imported ${res.imported} new · skipped ${res.skipped} duplicates.`);
     } catch (e: any) {
       setMsg(`Restore failed: ${e.message}`);
     } finally {
@@ -323,14 +323,14 @@ function BackupSection() {
       <AlertDialog open={pendingRestore != null} onOpenChange={(o) => { if (!o) setPendingRestore(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace your list with this backup?</AlertDialogTitle>
+            <AlertDialogTitle>Add this backup to your list?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your current list ({getEntriesSnapshot().length} entries), progress and ratings will be replaced by what's in the backup file. Export a backup first if you want to keep them.
+              New anime from the backup will be added. Anime already in your list ({getEntriesSnapshot().length} entries) are skipped, so your current progress and ratings stay as they are.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRestore}>Replace list</AlertDialogAction>
+            <AlertDialogAction onClick={confirmRestore}>Import</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
