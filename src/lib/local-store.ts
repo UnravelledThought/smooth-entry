@@ -387,32 +387,16 @@ export function parseBackup(json: string): LocalEntry[] {
   return dedupeAnime(entries);
 }
 
-export async function importBackup(json: string): Promise<number> {
-  const uid = requireUser(); if (!uid) return 0;
-  const entries = parseBackup(json);
-  // Keep a copy of the current list from the server so a failed import can be put back.
-  const { data: oldRows, error: rErr } = await supabase.from("watchlist_entries").select("*").eq("user_id", uid);
-  if (rErr || !oldRows) throw new Error("Couldn't reach your list. Nothing was changed.");
-  const { error } = await supabase.from("watchlist_entries").delete().eq("user_id", uid);
-  if (error) throw new Error("Couldn't replace your list. Nothing was changed.");
-  try {
-    await insertMany(uid, entries);
-  } catch (e) {
-    console.error(e);
-    await supabase.from("watchlist_entries").delete().eq("user_id", uid);
-    const { error: restoreErr } = oldRows.length
-      ? await supabase.from("watchlist_entries").insert(oldRows as any) : { error: null };
-    await loadUser(uid);
-    throw new Error(restoreErr
-      ? "Import failed and your old list couldn't be fully restored. Re-import your own backup."
-      : "Import failed. Your previous list was restored.");
+/** Merges a backup into the current list: anime already in the list are kept as-is, new ones are added. */
+export async function importBackup(json: string): Promise<{ imported: number; skipped: number }> {
+  const uid = requireUser(); if (!uid) return { imported: 0, skipped: 0 };
+  const parsed = parseBackup(json);
+  const fresh = dedupeAnime(parsed, state.entries);
+  if (fresh.length) {
+    await insertMany(uid, fresh);
+    commit({ ...state, entries: [...fresh, ...state.entries] });
   }
-  commit({ ...state, entries });
-  try {
-    const accent = JSON.parse(json)?.settings?.accent_color;
-    if (typeof accent === "string" && /^#[0-9a-f]{6}$/i.test(accent)) setAccentColor(accent);
-  } catch { /* already validated */ }
-  return entries.length;
+  return { imported: fresh.length, skipped: parsed.length - fresh.length };
 }
 
 export async function clearAll() {
