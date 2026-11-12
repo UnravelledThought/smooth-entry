@@ -308,3 +308,37 @@ export async function alAnticipated(perPage = 30): Promise<Anime[]> {
   );
   return (data.Page?.media ?? []).map(mapMedia);
 }
+
+/* ---------- search filters & airing schedule ---------- */
+
+export const SEARCH_FORMATS = ["TV", "MOVIE", "OVA", "ONA", "SPECIAL"] as const;
+export const SEARCH_GENRES = ["Action", "Comedy", "Drama", "Fantasy", "Romance", "Sci-Fi", "Slice of Life", "Mystery", "Sports", "Horror"] as const;
+
+export interface SearchFilters { genre?: string | null; format?: string | null }
+
+export async function alSearchFiltered(query: string, f: SearchFilters, perPage = 24): Promise<Anime[]> {
+  const q = query.trim() || undefined;
+  const data = await gql<any>(
+    `query($q:String,$g:String,$f:MediaFormat,$perPage:Int,$sort:[MediaSort]){Page(perPage:$perPage){media(search:$q,genre:$g,format:$f,type:ANIME,sort:$sort,isAdult:false){${MEDIA_CORE}}}}`,
+    { q, g: f.genre || undefined, f: f.format || undefined, perPage, sort: q ? ["SEARCH_MATCH"] : ["POPULARITY_DESC"] },
+  );
+  return (data.Page?.media ?? []).map(mapMedia);
+}
+
+export interface AiringSlot { airingAt: number; episode: number; anime: Anime }
+
+export async function alSchedule(start: number, end: number): Promise<AiringSlot[]> {
+  const out: AiringSlot[] = [];
+  for (let page = 1; page <= 6; page++) {
+    const data = await gql<any>(
+      `query($s:Int,$e:Int,$p:Int){Page(page:$p,perPage:50){pageInfo{hasNextPage} airingSchedules(airingAt_greater:$s,airingAt_lesser:$e,sort:TIME){airingAt episode media{isAdult ${MEDIA_CORE}}}}}`,
+      { s: start, e: end, p: page },
+    );
+    for (const s of data.Page?.airingSchedules ?? []) {
+      if (!s.media || s.media.isAdult) continue;
+      out.push({ airingAt: s.airingAt, episode: s.episode, anime: mapMedia(s.media) });
+    }
+    if (!data.Page?.pageInfo?.hasNextPage) break;
+  }
+  return out;
+}
