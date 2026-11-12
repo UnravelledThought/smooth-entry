@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bookmark, CalendarClock, Compass, Search, Settings as SettingsIcon, BarChart3, User, LogOut } from "lucide-react";
+import { Bookmark, CalendarDays, CalendarClock, Compass, Search, Settings as SettingsIcon, BarChart3, User, LogOut } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -8,6 +8,7 @@ import { useSession, signOut, profileSlug } from "@/lib/local-store";
 import { Avatar } from "./Avatar";
 import { ImportMetadataSync } from "./ImportMetadataSync";
 import { Logo } from "./Logo";
+import { CommandPalette } from "./CommandPalette";
 
 function AccountMenu() {
   const { ready, profile, userId } = useSession();
@@ -56,6 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const nav = [
     { to: "/" as const, label: "Discover", icon: Compass },
     { to: "/search" as const, label: "Search", icon: Search },
+    { to: "/schedule" as const, label: "Schedule", icon: CalendarDays },
     { to: "/upcoming" as const, label: "Upcoming", icon: CalendarClock },
     { to: "/list" as const, label: "List", icon: Bookmark },
     { to: "/stats" as const, label: "Stats", icon: BarChart3 },
@@ -64,13 +66,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <ImportMetadataSync />
+      <CommandPalette />
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4">
           <Link to="/" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
             <Logo className="h-6 w-6" />
             <span>ani<span className="accent-text">track</span></span>
           </Link>
-          <nav className="flex items-center gap-1">
+          <nav className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
             {nav.map(({ to, label, icon: Icon }) => {
               const active = path === to;
               return (
@@ -82,7 +85,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{label}</span>
+                  <span className="hidden lg:inline">{label}</span>
                 </Link>
               );
             })}

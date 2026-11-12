@@ -13,7 +13,8 @@
  * status, and neither one falls back to the other for data it does not own.
  */
 
-import { SourceUnavailableError, alByAnilistId, alByMalId, alByMalIds, alSearch, alSeasonNow, alTrending, alNextSeason, alAnticipated } from "./anilist";
+import { SourceUnavailableError, alByAnilistId, alByMalId, alByMalIds, alSearch, alSeasonNow, alTrending, alNextSeason, alAnticipated, alSearchFiltered, alSchedule, type SearchFilters, type AiringSlot } from "./anilist";
+export { SEARCH_FORMATS, SEARCH_GENRES, type SearchFilters, type AiringSlot } from "./anilist";
 import { jikanDetails, jikanEpisodes } from "./jikan";
 import { TTL, cacheRead, cacheWrite, isStale, type CacheRecord } from "./cache";
 import type { Anime, Episode, MalDetails, SourceResult } from "./types";
@@ -142,4 +143,22 @@ export async function getNextSeason(): Promise<SourceResult<Anime[]>> {
 
 export async function getAnticipated(): Promise<SourceResult<Anime[]>> {
   return cached("list:anticipated", UPCOMING_TTL, () => alAnticipated());
+}
+
+export async function searchFiltered(query: string, f: SearchFilters): Promise<SourceResult<Anime[]>> {
+  const q = query.trim();
+  if (!f.genre && !f.format) return searchAnime(q);
+  return cached(`search:${q.toLowerCase()}|${f.genre ?? ""}|${f.format ?? ""}`, TTL.search, () => alSearchFiltered(q, f));
+}
+
+/** Monday 00:00 (local) of the week containing `d`. */
+export function weekStart(d = new Date()): Date {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  return x;
+}
+
+export async function getWeeklySchedule(start = weekStart()): Promise<SourceResult<AiringSlot[]>> {
+  const s = Math.floor(start.getTime() / 1000);
+  return cached(`schedule:${s}`, 1000 * 60 * 60, () => alSchedule(s - 1, s + 7 * 86400));
 }

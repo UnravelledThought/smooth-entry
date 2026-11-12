@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { AnimeCard } from "@/components/AnimeCard";
-import { searchAnime } from "@/lib/anime/service";
+import { searchFiltered, SEARCH_FORMATS, SEARCH_GENRES } from "@/lib/anime/service";
 import { RefreshCw, Search as SearchIcon } from "lucide-react";
 
 export const Route = createFileRoute("/search")({
@@ -37,10 +37,15 @@ function SearchInner() {
     return () => clearTimeout(t);
   }, [q]);
 
+  const [genre, setGenre] = useState<string | null>(null);
+  const [format, setFormat] = useState<string | null>(null);
+  const hasFilter = !!genre || !!format;
+  const enabled = debounced.trim().length > 1 || hasFilter;
+
   const { data, isFetching, isError, refetch } = useQuery({
-    queryKey: ["anilist", "search", debounced],
-    queryFn: () => searchAnime(debounced),
-    enabled: debounced.trim().length > 1,
+    queryKey: ["anilist", "search", debounced, genre, format],
+    queryFn: () => searchFiltered(debounced, { genre, format }),
+    enabled,
     staleTime: 1000 * 60 * 30,
     retry: 1,
   });
@@ -63,9 +68,19 @@ function SearchInner() {
         />
       </div>
 
+      <div className="mt-5 space-y-2">
+        <ChipRow label="Format" options={SEARCH_FORMATS.map((f) => [f, f === "MOVIE" ? "Movie" : f === "SPECIAL" ? "Special" : f])} value={format} onChange={setFormat} />
+        <ChipRow label="Genre" options={SEARCH_GENRES.map((g) => [g, g])} value={genre} onChange={setGenre} />
+        {hasFilter && (
+          <button onClick={() => { setGenre(null); setFormat(null); }} className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            Clear filters
+          </button>
+        )}
+      </div>
+
       <div className="mt-10">
-        {!debounced && (
-          <p className="text-sm text-muted-foreground">Type at least 2 characters to search.</p>
+        {!enabled && (
+          <p className="text-sm text-muted-foreground">Type at least 2 characters, or pick a filter to browse.</p>
         )}
         {isFetching && <p className="text-sm text-muted-foreground">Searching…</p>}
         {isError && !isFetching && (
@@ -77,7 +92,7 @@ function SearchInner() {
           </div>
         )}
         {results && results.length === 0 && !isFetching && !isError && (
-          <p className="text-sm text-muted-foreground">No results for "{debounced}".</p>
+          <p className="text-sm text-muted-foreground">No results{debounced ? ` for "${debounced}"` : ""}.</p>
         )}
         {results && results.length > 0 && (
           <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -85,6 +100,31 @@ function SearchInner() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ChipRow({ label, options, value, onChange }: {
+  label: string; options: [string, string][]; value: string | null; onChange: (v: string | null) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="w-14 text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+      {options.map(([v, text]) => {
+        const active = value === v;
+        return (
+          <button
+            key={v}
+            aria-pressed={active}
+            onClick={() => onChange(active ? null : v)}
+            className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
+              active ? "accent-border accent-text" : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {text}
+          </button>
+        );
+      })}
     </div>
   );
 }
